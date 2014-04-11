@@ -1,0 +1,92 @@
+6
+Happiness
+Left_Outer_Upper_Mouth 0.00	Right_Outer_Upper_Mouth 0.00
+Left_Inner_Upper_Mouth 10.00 Right_Inner_Upper_Mouth 10.00
+Left_Outer_Lower_Mouth 0.00	Right_Outer_Lower_Mouth 0.00
+Left_Inner_Lower_Mouth 0.00	Right_Inner_Lower_Mouth 0.00
+Left_Inner_Upper_Eye 0.00	Right_Inner_Upper_Eye 0.00
+Left_Middle_Upper_Eye 0.00	Right_Middle_Upper_Eye 0.00
+Left_Outer_Upper_Eye 0.00	Right_Outer_Upper_Eye 0.00
+Left_Outer_Nose 0.00		Right_Outer_Nose 0.00
+Left_Inner_Nose 0.00        Right_Inner_Nose 0.00
+Left_Upper_Inner_Nose 0.00	Right_Upper_Inner_Nose 0.00
+Left_Upper_Outer_Nose 0.00	Right_Upper_Outer_Nose 0.00
+
+Anger
+Left_Outer_Upper_Mouth 0.00	Right_Outer_Upper_Mouth 0.00	
+Left_Inner_Upper_Mouth 0.00 Right_Inner_Upper_Mouth 0.00
+Left_Outer_Lower_Mouth 0.70	Right_Outer_Lower_Mouth 0.60	
+Left_Inner_Lower_Mouth 0.00	Right_Inner_Lower_Mouth 0.00
+Left_Inner_Upper_Eye 0.20	Right_Inner_Upper_Eye 0.00	
+Left_Middle_Upper_Eye 0.10	Right_Middle_Upper_Eye 0.00	
+Left_Outer_Upper_Eye 2.00	Right_Outer_Upper_Eye 2.00	
+Left_Outer_Nose 1.80		Right_Outer_Nose 1.90	
+Left_Inner_Nose 1.20	Right_Inner_Nose 1.10	
+Left_Upper_Inner_Nose 1.40	Right_Upper_Inner_Nose 1.30	
+Left_Upper_Outer_Nose 0.20	Right_Upper_Outer_Nose 0.30	
+Surprise
+Left_Outer_Upper_Mouth 0.20	Right_Outer_Upper_Mouth 0.20	
+Left_Inner_Upper_Mouth 0.00 Right_Inner_Upper_Mouth 0.00
+Left_Outer_Lower_Mouth 0.40	Right_Outer_Lower_Mouth 0.40	
+Left_Inner_Lower_Mouth 0.00	Right_Inner_Lower_Mouth 0.00
+Left_Inner_Upper_Eye 1.40	Right_Inner_Upper_Eye 0.90	
+Left_Middle_Upper_Eye 0.50	Right_Middle_Upper_Eye 0.40	
+Left_Outer_Upper_Eye 0.20	Right_Outer_Upper_Eye 0.70	
+Left_Outer_Nose 0.00		Right_Outer_Nose 0.00	
+Left_Inner_Nose 0.00	Right_Inner_Nose 0.10	
+Left_Upper_Inner_Nose 0.00	Right_Upper_Inner_Nose 0.00	
+Left_Upper_Outer_Nose 0.50	Right_Upper_Outer_Nose 0.60	
+Sadness
+Left_Outer_Upper_Mouth 0.00	Right_Outer_Upper_Mouth 0.00	
+Left_Inner_Upper_Mouth 0.00 Right_Inner_Upper_Mouth 0.00
+Left_Outer_Lower_Mouth 0.70	Right_Outer_Lower_Mouth 0.70	
+Left_Inner_Lower_Mouth 0.00	Right_Inner_Lower_Mouth 0.00
+Left_Inner_Upper_Eye 3.10	Right_Inner_Upper_Eye 3.90	
+Left_Middle_Upper_Eye 0.00	Right_Middle_Upper_Eye 0.00	
+Left_Outer_Upper_Eye 0.00	Right_Outer_Upper_Eye 0.00	
+Left_Outer_Nose 0.20		Right_Outer_Nose 0.70	
+Left_Inner_Nose 0.20	Right_Inner_Nose 0.20	
+Left_Upper_Inner_Nose 0.00	Right_Upper_Inner_Nose 0.00	
+Left_Upper_Outer_Nose 0.00	Right_Upper_Outer_Nose 0.00	
+Fear
+Left_Outer_Upper_Mouth 0.60	Right_Outer_Upper_Mouth 0.50	
+Left_Inner_Upper_Mouth 0.00 Right_Inner_Upper_Mouth 0.00
+Left_Outer_Lower_Mouth 0.50	Right_Outer_Lower_Mouth 0.50	
+Left_Inner_Lower_Mouth 0.00	Right_Inner_Lower_Mouth 0.00
+Left_Inner_Upper_Eye 0.20	Right_Inner_Upper_Eye 0.20
+Left_Middle_Upper_Eye 0.60	Right_Middle_Upper_Eye 0.50	
+Left_Outer_Upper_Eye 0.20	Right_Outer_Upper_Eye 0.20	
+Left_Outer_Nose 0.20		Right_Outer_Nose 0.20	
+Left_Inner_Nose 0.10	Right_Inner_Nose 0.10	
+Left_Upper_Inner_Nose 0.20	Right_Upper_Inner_Nose 0.20	
+Left_Upper_Outer_Nose 0.40	Right_Upper_Outer_Nose 0.30	
+Disgust
+Left_Outer_Upper_Mouth 0.80	Right_Outer_Upper_Mouth 0.10	
+Left_Inner_Upper_Mouth 0.00 Right_Inner_Upper_Mouth 0.00
+Left_Outer_Lower_Mouth 0.00	Right_Outer_Lower_Mouth 0.50	
+Left_Inner_Lower_Mouth 0.00	Right_Inner_Lower_Mouth 0.00
+Left_Inner_Upper_Eye 0.20	Right_Inner_Upper_Eye 0.00	
+Left_Middle_Upper_Eye 0.00	Right_Middle_Upper_Eye 0.00	
+Left_Outer_Upper_Eye 0.40	Right_Outer_Upper_Eye 1.70	
+Left_Outer_Nose 1.10		Right_Outer_Nose 2.00	
+Left_Inner_Nose 0.70	Right_Inner_Nose 0.20	
+Left_Upper_Inner_Nose 2.30	Right_Upper_Inner_Nose 2.40	
+Left_Upper_Outer_Nose 0.00	Right_Upper_Outer_Nose 0.00	
+
+
+
+
+
+TEMPLATE
+Name
+Left_Outer_Upper_Mouth 0.00	Right_Outer_Upper_Mouth 0.00
+Left_Inner_Upper_Mouth 0.00 Right_Inner_Upper_Mouth 0.00
+Left_Outer_Lower_Mouth 0.00	Right_Outer_Lower_Mouth 0.00
+Left_Inner_Lower_Mouth 0.00	Right_Inner_Lower_Mouth 0.00
+Left_Inner_Upper_Eye 0.00	Right_Inner_Upper_Eye 0.00
+Left_Middle_Upper_Eye 0.00	Right_Middle_Upper_Eye 0.00	
+Left_Outer_Upper_Eye 0.00	Right_Outer_Upper_Eye 0.00
+Left_Outer_Nose 0.00		Right_Outer_Nose 0.00
+Left_Inner_Nose 0.00        Right_Inner_Nose 0.00
+Left_Upper_Inner_Nose 0.00	Right_Upper_Inner_Nose 0.00
+Left_Upper_Outer_Nose 0.00	Right_Upper_Outer_Nose 0.00	
