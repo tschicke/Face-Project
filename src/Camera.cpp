@@ -9,6 +9,12 @@
 
 Camera::Camera() {
 	camNumber = 0;
+	baseDistance = 0;
+	baseRadius = 0;
+	bottomEdge = 0;
+	leftEdge = 0;
+	rightEdge = 0;
+	topEdge = 0;
 }
 
 Camera::Camera(int camNumber) {
@@ -26,42 +32,41 @@ cv::Mat Camera::getCameraFrame() {
 	return frame;
 }
 
-GridDetector::GridDetector() {
-	gridWidth = gridHeight = 0;
-	squareWidth = squareHeight = 0;
-	gridDepth = 0;
+void Camera::calibrateDepth(float baseDistance) {
+	Circle circle = getFrameCircle();
+	this->baseDistance = baseDistance;
+	this->baseRadius = circle.radius;
 }
 
-GridDetector::GridDetector(int gridWidth, int gridHeight, int squareWidth, int squareHeight, int cameraID) {
-	init(gridWidth, gridHeight, squareWidth, squareHeight, cameraID);
+void Camera::calibrateSides(bool left, float xDistance) {
+	if (left) {
+		leftEdge = xDistance;
+	} else {
+		rightEdge = xDistance;
+	}
 }
 
-void GridDetector::init(int gridWidth, int gridHeight, int squareWidth, int squareHeight, int cameraID) {
-	this->gridWidth = gridWidth;
-	this->gridHeight = gridHeight;
-	this->squareWidth = squareWidth;
-	this->squareHeight = squareHeight;
-
-	camera.openStream(cameraID);
-
-	gridDepth = 0;
+void Camera::calibrateBottomTop(bool bottom, float yDistance) {
+	if (bottom) {
+		bottomEdge = yDistance;
+	} else {
+		topEdge = yDistance;
+	}
 }
 
-void GridDetector::update(){
-	calcGridCorners2d();
-	calcGridCorners3d();
+Circle Camera::getFrameCircle(){
 }
 
-void GridDetector::calcGridCorners2d(){
+glm::vec3 Camera::getObjectPosition(Circle circle){
+	float x;
+	float y;
+	float z;
 
-}
+	z = baseRadius * baseDistance / circle.radius;
+	x = (circle.positionScreenSpace.x * z * rightEdge) / (baseDistance * 500);
+	y = (circle.positionScreenSpace.y * z * topEdge) / (baseDistance * 500);
 
-cv::Point2f* const GridDetector::getGridCorners2d() {
-	return gridCorners2d;
-}
-
-cv::Point3f* const GridDetector::getGridCorners3d() {
-	return gridCorners3d;
+	return glm::vec3(x, y, z);
 }
 //Calibrator::Calibrator(std::string path, float sideLength, int width, int height) {
 //	this->path = path;

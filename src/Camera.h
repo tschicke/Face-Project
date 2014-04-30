@@ -13,8 +13,10 @@
 #include <opencv2/calib3d/calib3d.hpp>
 #include <opencv2/core/core.hpp>
 
-#include <string.h>
+#include <string>
 #include <vector.h>
+
+#include <glm/glm.hpp>
 
 class Calibrator {
 private:
@@ -36,6 +38,11 @@ public:
 	void calcImagePoints();
 };
 
+struct Circle {
+public:
+	float radius;
+	glm::vec2 positionScreenSpace;
+};
 
 class Camera {
 public:
@@ -46,36 +53,21 @@ public:
 
 	cv::Mat getCameraFrame();
 
+	void calibrateDepth(float baseDistance);
+	void calibrateSides(bool left, float xDistance);
+	void calibrateBottomTop(bool bottom, float yDistance);
+
+	Circle getFrameCircle();
+
+	glm::vec3 getObjectPosition(Circle circle);
+
 private:
 	cv::VideoCapture capture;
 
 	int camNumber;
-};
 
-class GridDetector {
-public:
-	GridDetector();
-	GridDetector(int gridWidth, int gridHeight, int squareWidth, int squareHeight, int cameraID);
-
-	void init(int gridWidth, int gridHeight, int squareWidth, int squareHeight, int cameraID);
-
-	void update();
-
-	cv::Point2f *const getGridCorners2d();
-	cv::Point3f *const getGridCorners3d();
-
-	void calcGridCorners2d();
-	void calcGridCorners3d();
-private:
-
-	int gridWidth, gridHeight;//width and height in number of squares
-	int squareWidth, squareHeight;//width and height of one square in centimeters
-
-	Camera camera;
-
-	cv::Point2f gridCorners2d[4];
-	cv::Point3f gridCorners3d[4];
-	float gridDepth;
+	float baseDistance, baseRadius;
+	float leftEdge, rightEdge, bottomEdge, topEdge;
 };
 
 #endif /* CAMERA_H_ */

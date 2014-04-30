@@ -1,12 +1,12 @@
 6
 Happiness
-Left_Outer_Upper_Mouth 0.00	Right_Outer_Upper_Mouth 0.00
-Left_Inner_Upper_Mouth 10.00 Right_Inner_Upper_Mouth 10.00
+Left_Outer_Upper_Mouth 1.10	Right_Outer_Upper_Mouth 1.00
+Left_Inner_Upper_Mouth 0.00 Right_Inner_Upper_Mouth 0.00
 Left_Outer_Lower_Mouth 0.00	Right_Outer_Lower_Mouth 0.00
 Left_Inner_Lower_Mouth 0.00	Right_Inner_Lower_Mouth 0.00
-Left_Inner_Upper_Eye 0.00	Right_Inner_Upper_Eye 0.00
-Left_Middle_Upper_Eye 0.00	Right_Middle_Upper_Eye 0.00
-Left_Outer_Upper_Eye 0.00	Right_Outer_Upper_Eye 0.00
+Left_Inner_Upper_Eye 0.80	Right_Inner_Upper_Eye 0.90
+Left_Middle_Upper_Eye 0.20	Right_Middle_Upper_Eye 0.20
+Left_Outer_Upper_Eye 0.10	Right_Outer_Upper_Eye 0.30
 Left_Outer_Nose 0.00		Right_Outer_Nose 0.00
 Left_Inner_Nose 0.00        Right_Inner_Nose 0.00
 Left_Upper_Inner_Nose 0.00	Right_Upper_Inner_Nose 0.00

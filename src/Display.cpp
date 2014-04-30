@@ -152,13 +152,14 @@ void paint_polygons ( HEAD *face, int type, int normals )
             //COLOR FACE
             glEnable(GL_COLOR_MATERIAL);
             glBegin ( GL_TRIANGLES ) ; {
-                glColor3f(0, 0, face->polygon[i]->vertex[0]->isLL);
+            	float r = 227.f / 255, g = 194.f / 255, b = 124.f / 255;
+                glColor3f(r, g, b);
                 glNormal3f ( norm1[0], norm1[1], norm1[2] ) ;
                 glVertex3f ( v1[0],    v1[1],    v1[2]    ) ;
-                glColor3f(0, 0, face->polygon[i]->vertex[1]->isLL);
+                glColor3f(r, g, b);
                 glNormal3f ( norm2[0], norm2[1], norm2[2] ) ;
                 glVertex3f ( v2[0],    v2[1],    v2[2]    ) ;
-                glColor3f(0, 0, face->polygon[i]->vertex[2]->isLL);
+                glColor3f(r, g, b);
                 glNormal3f ( norm3[0], norm3[1], norm3[2] ) ;
                 glVertex3f ( v3[0],    v3[1],    v3[2]    ) ;
             }  glEnd ( ) ;
