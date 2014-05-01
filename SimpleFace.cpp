@@ -31,6 +31,7 @@
 #include <iostream>
 
 #include <glm/glm.hpp>
+#include <glm/gtx/transform.hpp>
 
 #include <cmath>
 
@@ -195,19 +196,27 @@ static void Key_h(void)
 }
 
 void lookAtPoint(glm::vec3 position) {
-	glm::vec3 eye1Pos(eye1Info.x + eyeX, eye1Info.y + eyeY, eye1Info.z + eyeZ);
-	glm::vec3 eye2Pos(eye2Info.x + eyeX, eye2Info.y + eyeY, eye2Info.z + eyeZ);
+	glm::vec4 eye1Pos(eye1Info.x + eyeX, eye1Info.y + eyeY, eye1Info.z + eyeZ, 1);
+	glm::vec4 eye2Pos(eye2Info.x + eyeX, eye2Info.y + eyeY, eye2Info.z + eyeZ, 1);
 
-	eye1Info.yaw = (atan2(position.x - eye1Pos.x, position.z - eye1Pos.z) * 180 / 3.14159265358979) - rotateY;
-	eye2Info.yaw = (atan2(position.x - eye2Pos.x, position.z - eye2Pos.z) * 180 / 3.14159265358979) - rotateY;
-	eye1Info.pitch = (atan2(position.y - eye1Pos.y, position.z - eye1Pos.z) * 180 / 3.14159265358979) - rotateX;
-	eye2Info.pitch = (atan2(position.y - eye2Pos.y, position.z - eye2Pos.z) * 180 / 3.14159265358979) - rotateX;
+	glm::mat4 rotationMatrix = glm::rotate(-(float) rotateY, glm::vec3(0.f, 1.f, 0.f)) * glm::rotate((float) rotateX, glm::vec3(1, 0, 0));
+
+//	eye1Pos = rotationMatrix * eye1Pos;
+//	eye2Pos = rotationMatrix * eye1Pos;
+	glm::vec4 rotatedPosition = rotationMatrix * glm::vec4(position, 1);
+
+	eye1Info.yaw = (atan2(rotatedPosition.x - eye1Pos.x, rotatedPosition.z - eye1Pos.z) * 180 / 3.14159265358979);
+	eye2Info.yaw = (atan2(rotatedPosition.x - eye2Pos.x, rotatedPosition.z - eye2Pos.z) * 180 / 3.14159265358979);
+	eye1Info.pitch = (atan2(rotatedPosition.y - eye1Pos.y, rotatedPosition.z - eye1Pos.z) * 180 / 3.14159265358979);
+	eye2Info.pitch = (atan2(rotatedPosition.y - eye2Pos.y, rotatedPosition.z - eye2Pos.z) * 180 / 3.14159265358979);
+
+	std::cout << "Eye1 Yaw " << eye1Info.yaw << '\n';
 
 //	rotateY = atan2(position.x - eyeX, position.z - eyeZ);
 //	rotateX = atan2(position.y - eyeY, position.z - eyeZ);
 }
 
-void facePoint(glm::vec3 position){
+void facePoint(glm::vec3 position) {
 
 }
 
@@ -306,12 +315,12 @@ void updateFace(int dt) {
 	static bool calc = true;
 	static int counter = 0;
 	counter += 1;
-	if (counter > 15)
+	if (counter < 15)
 		calc = true;
 	if (calc) {
 		float posX = ((rand() % 20) - 10);
 		float posY = ((rand() % 20) - 10);
-		lookAtPoint(glm::vec3(posX, posY, 30));
+		lookAtPoint(glm::vec3(0, 0, 0));
 		calc = false;
 		counter = 0;
 	}
@@ -332,6 +341,7 @@ static void Animate(void)
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 	// clear current matrix (Modelview)
+	glMatrixMode(GL_MODELVIEW);
 	glLoadIdentity();
 
 	// back off thirty units down the Z axis
@@ -352,7 +362,7 @@ static void Animate(void)
 
 	drawEyeSystem(eyeX, eyeY, eyeZ, eyePitch, eyeYaw, eyeRoll, eye1Info, eye2Info);
 
-	//COLOR FACE
+//COLOR FACE
 	glEnable(GL_LIGHTING);
 
 	//END NEW BLOCK
