@@ -54,6 +54,7 @@ typedef struct POLYGON {
 
 typedef struct HEAD {
     
+	bool mouthOpen;
     bool transitioning;
     int transitionCounter;
     int currentExpression;

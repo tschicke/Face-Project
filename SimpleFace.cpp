@@ -30,6 +30,8 @@
 
 #include <iostream>
 
+#include <glm/glm.hpp>
+
 #include <cmath>
 
 //#include "src/MainWindow.h"
@@ -57,6 +59,10 @@ struct EyeInfo;
 EyeInfo initEyeInfo(float x, float y, float z, int yaw, int pitch, int roll, float size, float radius);
 void drawEyeSystem(float sysX, float sysY, float sysZ, int sysPitch, int sysYaw, int sysRoll, EyeInfo eye1Info, EyeInfo eye2Info);
 void drawEye(float x, float y, float z, float radius, float yaw, float pitch, float roll);
+
+EyeInfo eye1Info, eye2Info;
+int eyeYaw, eyePitch, eyeRoll;
+float eyeX, eyeY, eyeZ;
 
 GLfloat rotateX, rotateY;
 
@@ -104,13 +110,10 @@ static void Key_C(void)
 	// Record the muscle activation 
 	face->muscle[cm]->mstat -= 0.1;
 
-	activate_muscle(face,
-			cm,
-			-0.1);
+	activate_muscle(face, cm, -0.1);
 
 }
-static void Key_n(void)
-		{
+static void Key_n(void) {
 	std::cout << "Key_n\n";
 	face->current_muscle++;
 	if (face->current_muscle >= face->nmuscles)
@@ -129,29 +132,23 @@ static void Key_N(void) {
 	std::cout << face->muscle[face->current_muscle]->name << '\n';
 }
 
-static void Key_up(void)
-		{
+static void Key_up(void) {
 	rotateX -= 2.0f;
 }
-static void Key_down(void)
-		{
+static void Key_down(void) {
 	rotateX += 2.0f;
 }
-static void Key_left(void)
-		{
+static void Key_left(void) {
 	rotateY -= 2.0f;
 }
-static void Key_right(void)
-		{
+static void Key_right(void) {
 	rotateY += 2.0f;
 }
-static void Key_r(void)
-		{
+static void Key_r(void) {
 	face_reset(face);
 	face->current_exp = 0;
 }
-static void Key_R(void)
-		{
+static void Key_R(void) {
 	face_reset(face);
 	read_expression_macros("face-data/expression-macros.dat", face);
 	face->current_exp = 0;
@@ -159,8 +156,7 @@ static void Key_R(void)
 static void Key_T() {
 	face->transitioning = true;
 }
-static void Key_w(void)
-		{
+static void Key_w(void) {
 	FILE *OutFile;
 	int i;
 
@@ -177,6 +173,7 @@ static void Key_w(void)
 
 	fclose(OutFile);
 }
+
 static void Key_h(void)
 		{
 	fprintf(stderr, "\n");
@@ -195,6 +192,16 @@ static void Key_h(void)
 	fprintf(stderr, "Left arrow:  \t rotates the face left\n");
 
 	fprintf(stderr, "\n");
+}
+
+void trackPoint(glm::vec3 position) {
+	glm::vec3 eye1Pos(eye1Info.x + eyeX, eye1Info.y + eyeY, eye1Info.z + eyeZ);
+	glm::vec3 eye2Pos(eye2Info.x + eyeX, eye2Info.y + eyeY, eye2Info.z + eyeZ);
+
+	eye1Info.yaw = atan2(position.x - eye1Pos.x, position.z - eye1Pos.z) * 180 / 3.14159265358979;
+	eye2Info.yaw = atan2(position.x - eye2Pos.x, position.z - eye2Pos.z) * 180 / 3.14159265358979;
+	eye1Info.pitch = atan2(position.y - eye1Pos.y, position.z - eye1Pos.z) * 180 / 3.14159265358979;
+	eye2Info.pitch = atan2(position.y - eye2Pos.y, position.z - eye2Pos.z) * 180 / 3.14159265358979;
 }
 
 // ========================================================================
@@ -257,6 +264,8 @@ void input(sf::Event event) {
 			Key_h();
 		} else if (event.key.code == sf::Keyboard::T) {
 			Key_T();
+		} else if (event.key.code == sf::Keyboard::M) {
+			face->mouthOpen = !(face->mouthOpen);
 		}
 	} else if (event.type == sf::Event::Resized) {
 		ResizeWindow(event.size.width, event.size.height);
@@ -286,6 +295,18 @@ void updateFace(int dt) {
 			face->transitioning = false;
 			face->transitionCounter = 0;
 		}
+	}
+	static bool calc = true;
+	static int counter = 0;
+	counter++;
+	if (counter > 15)
+		calc = true;
+	if (calc) {
+		float posX = ((rand() % 20) - 10) / 2;
+		float posY = ((rand() % 20) - 10) / 2;
+		trackPoint(glm::vec3(posX, posY, 25));
+		calc = false;
+		counter = 0;
 	}
 }
 
@@ -321,17 +342,15 @@ static void Animate(void)
 
 	//NEW BLOCK
 	glDisable(GL_LIGHTING);
-	static int angle = 0;
 
-	EyeInfo eye1Info = initEyeInfo(-2.05, 0, 0, angle, 0, 0, 0, 1.2);
-	EyeInfo eye2Info = initEyeInfo(2.05, 0, 0, 0, angle, 0, 0, 1.2);
-	drawEyeSystem(0, 2.8, 6.5, 0, 0, 0, eye1Info, eye2Info);
+	drawEyeSystem(eyeX, eyeY, eyeZ, eyePitch, eyeYaw, eyeRoll, eye1Info, eye2Info);
+
 	//COLOR FACE
 	glEnable(GL_LIGHTING);
 
 	//END NEW BLOCK
 
-	// Transparancy 
+	// Transparancy
 	if (face->rendermode == 3) {
 		glEnable(GL_BLEND);
 		glDepthMask(GL_FALSE);
@@ -347,11 +366,11 @@ static void Animate(void)
 //    glDisable(GL_LIGHTING);
 	paint_polygons(face, face->rendermode, 0);
 
-	// if the rendering mode is wireframe 
+	// if the rendering mode is wireframe
 	// or transparent then display the muscles
 //	if ( face->rendermode == 0 || 
 //		 face->rendermode == 3 ) {
-	glDisable(GL_LIGHTING);
+	glDisable( GL_LIGHTING);
 	paint_muscles(face);
 //	}
 
@@ -381,11 +400,11 @@ void OpenGLInit(void)
 	GLfloat shininess[] = { 1.f };
 	GLfloat ambient[] = { 0.8f, 0.8f, 0.8f, 1.0f };
 	GLfloat emit[] = { 0.1f, 0.1f, 0.1f, 1.f };
-	glMaterialfv(GL_FRONT, GL_SPECULAR, specular);
-	glMaterialfv(GL_FRONT, GL_SHININESS, shininess);
+//    glMaterialfv(GL_FRONT, GL_SPECULAR, specular);
+//    glMaterialfv(GL_FRONT, GL_SHININESS, shininess);
 //    glMaterialfv(GL_FRONT, GL_AMBIENT, ambient);
 //    glMaterialfv(GL_FRONT, GL_EMISSION, emit);
-	glColorMaterial(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE);
+//    glColorMaterial(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE);
 }
 
 // ======================================================================== 
@@ -401,7 +420,7 @@ int main(int argc, char** argv)
 	sf::Window window;
 	window.create(sf::VideoMode(1024, 1024, 32), "Face", 7U, settings);
 	window.setFramerateLimit(60);
-	window.setPosition(sf::Vector2i(50, 190)); //Temp
+	window.setPosition(sf::Vector2i(50, 190));//Temp
 
 	// Initialize OpenGL
 	OpenGLInit();
@@ -455,4 +474,11 @@ void FaceInit(void)
 	read_muscles("face-data/muscle.dat", face);
 	read_expression_macros("face-data/expression-macros.dat", face);
 	data_struct(face);
+
+	eye1Info = initEyeInfo(-2.05, 0, 0, 0, 0, 0, 0, 1.2);
+	eye2Info = initEyeInfo(2.05, 0, 0, 0, 0, 0, 0, 1.2);
+	eyeYaw = eyePitch = eyeRoll = 0;
+	eyeX = 0;
+	eyeY = 2.8;
+	eyeZ = 6.4;
 }

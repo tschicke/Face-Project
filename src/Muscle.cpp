@@ -130,20 +130,22 @@ void activate_muscle ( HEAD *face, int m, float val)
         
         // loop for all vertices
         for (j=0; j<3; j++) {
-            bool vertIsLL = face->polygon[i]->vertex[j]->isLL;
-            bool vertIsUL = face->polygon[i]->vertex[j]->isUL;
-            bool vertIsLEL = face->polygon[i]->vertex[j]->isLEL;
-            bool vertIsUEL = face->polygon[i]->vertex[j]->isUEL;
-            
-            bool LLCheck = (vertIsLL && canAffectLL);
-            bool ULCheck = (vertIsUL && canAffectUL);
-            bool LELCheck = (vertIsLEL && canAffectLEL);
-            bool UELCheck = (vertIsUEL && canAffectUEL);
-            bool noneCheck = (!(vertIsLL || vertIsUL || vertIsLEL || vertIsUEL));
-            
-            if(!(LLCheck || ULCheck || LELCheck || UELCheck || noneCheck)){
-                continue;
-            }
+			if (face->mouthOpen) {
+				bool vertIsLL = face->polygon[i]->vertex[j]->isLL;
+				bool vertIsUL = face->polygon[i]->vertex[j]->isUL;
+				bool vertIsLEL = face->polygon[i]->vertex[j]->isLEL;
+				bool vertIsUEL = face->polygon[i]->vertex[j]->isUEL;
+
+				bool LLCheck = (vertIsLL && canAffectLL);
+				bool ULCheck = (vertIsUL && canAffectUL);
+				bool LELCheck = (vertIsLEL && canAffectLEL);
+				bool UELCheck = (vertIsUEL && canAffectUEL);
+				bool noneCheck = (!(vertIsLL || vertIsUL || vertIsLEL || vertIsUEL));
+
+				if(!(LLCheck || ULCheck || LELCheck || UELCheck || noneCheck)){
+					continue;
+				}
+			}
             
             // find the length of the muscle head to the mesh node
             for (k=0; k<3; k++)
