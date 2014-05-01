@@ -41,7 +41,7 @@
 #include <math.h>           // C header for any math functions               
 #include <stdio.h>          // C header for standard I/O                     
 #include "memory.h"         // Local memory allocation macros                
-#include "head.h"			// local header for the face
+#include "Head.h"			// local header for the face
 
 #include <iostream>
 
@@ -89,7 +89,7 @@ HEAD *create_face(const char *f1, const char *f2, const char * f3) {
 
     h->transitioning = false;
     h->transitionCounter = 0;
-    h->current_exp = 0;
+    h->currentExpression = 0;
     h->nextExpression = 1;
     
     
@@ -515,16 +515,16 @@ void make_expression(HEAD *face, int e) {
 
 void transitionExpression(HEAD *face, int e1, int e2, int timePassed, int totalTime){
     printf("\n%s to %s\n", face->expression[e1]->name, face->expression[e2]->name);
-    
+
     for(int m = 0; m < face->nmuscles; ++m){
         float fraction = (float) timePassed / totalTime;
 //        float muscleContraction = (face->expression[e1]->m[m] * (1 - fraction)) + (face->expression[e2]->m[m] * fraction);//Linear
-        
+
 //        float muscleContraction = ((face->expression[e2]->m[m] - face->expression[e1]->m[m]) * fraction) + face->expression[e1]->m[m];//Linear
-        
-        float cosFrac = (cosf(fraction * 3.14159265358979f) + 1) / 2;
+
+        float cosFrac = (cos(fraction * 3.14159265358979f) + 1) / 2;
         float muscleContraction = (face->expression[e1]->m[m] * cosFrac) + (face->expression[e2]->m[m] * (1 - cosFrac));//Cosine
-        
+
         activate_muscle(face, m, muscleContraction);
     }
 }

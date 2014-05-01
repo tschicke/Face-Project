@@ -36,14 +36,14 @@ void drawEye(float x, float y, float z, float radius, float yaw, float pitch, fl
     float irisAngle = 14;
     float whiteAngle = (90 - (pupilAngle + irisAngle)) / 2;
     
-    float cosPupil = cosf(toRad(pupilAngle));
-    float cosIris = cosf(toRad(irisAngle + pupilAngle));
-    float cosWhite1 = cosf(toRad(whiteAngle + irisAngle + pupilAngle));
+    float cosPupil = cos(toRad(pupilAngle));
+    float cosIris = cos(toRad(irisAngle + pupilAngle));
+    float cosWhite1 = cos(toRad(whiteAngle + irisAngle + pupilAngle));
     float cosWhite2 = 0;
     
-    float pupilRadius = radius * sinf(toRad(pupilAngle));
-    float irisRadius = radius * sinf(toRad(irisAngle + pupilAngle));
-    float white1Radius = radius * sinf(toRad(whiteAngle + irisAngle + pupilAngle));
+    float pupilRadius = radius * sin(toRad(pupilAngle));
+    float irisRadius = radius * sin(toRad(irisAngle + pupilAngle));
+    float white1Radius = radius * sin(toRad(whiteAngle + irisAngle + pupilAngle));
     float white2Radius = radius;
     
     glPushMatrix();
@@ -61,7 +61,7 @@ void drawEye(float x, float y, float z, float radius, float yaw, float pitch, fl
     glVertex3f(pupilRadius, 0, radius * cosPupil);
     glVertex3f(0, 0, radius * cosPupil);
     for (int angle = 360 / 12; angle < 360; angle += 360 / 12) {
-        glVertex3f(pupilRadius * cosf(toRad(angle)), pupilRadius * sinf(toRad(angle)), radius * cosPupil);
+        glVertex3f(pupilRadius * cos(toRad(angle)), pupilRadius * sin(toRad(angle)), radius * cosPupil);
     }
     glEnd();
     
@@ -71,8 +71,8 @@ void drawEye(float x, float y, float z, float radius, float yaw, float pitch, fl
     glVertex3f(pupilRadius, 0, radius * cosPupil);
     glVertex3f(irisRadius, 0, radius * cosIris);
     for (int i = 360/12; i < 360 + (360/12); i += 360/12) {
-        glVertex3f(pupilRadius * cosf(toRad(i)), pupilRadius * sinf(toRad(i)), radius * cosPupil);
-        glVertex3f(irisRadius * cosf(toRad(i)), irisRadius * sinf(toRad(i)), radius * cosIris);
+        glVertex3f(pupilRadius * cos(toRad(i)), pupilRadius * sin(toRad(i)), radius * cosPupil);
+        glVertex3f(irisRadius * cos(toRad(i)), irisRadius * sin(toRad(i)), radius * cosIris);
     }
     glEnd();
     
@@ -82,8 +82,8 @@ void drawEye(float x, float y, float z, float radius, float yaw, float pitch, fl
     glVertex3f(irisRadius, 0, radius * cosIris);
     glVertex3f(white1Radius, 0, radius * cosWhite1);
     for (int i = 360/12; i < 360 + (360/12); i += 360/12) {
-        glVertex3f(irisRadius * cosf(toRad(i)), irisRadius * sinf(toRad(i)), radius * cosIris);
-        glVertex3f(white1Radius * cosf(toRad(i)), white1Radius * sinf(toRad(i)), radius * cosWhite1);
+        glVertex3f(irisRadius * cos(toRad(i)), irisRadius * sin(toRad(i)), radius * cosIris);
+        glVertex3f(white1Radius * cos(toRad(i)), white1Radius * sin(toRad(i)), radius * cosWhite1);
     }
     glEnd();
     
@@ -92,8 +92,8 @@ void drawEye(float x, float y, float z, float radius, float yaw, float pitch, fl
     glVertex3f(white1Radius, 0, radius * cosWhite1);
     glVertex3f(white2Radius, 0, radius * cosWhite2);
     for (int i = 360/12; i < 360 + (360/12); i += 360/12) {
-        glVertex3f(white1Radius * cosf(toRad(i)), white1Radius * sinf(toRad(i)), radius * cosWhite1);
-        glVertex3f(white2Radius * cosf(toRad(i)), white2Radius * sinf(toRad(i)), radius * cosWhite2);
+        glVertex3f(white1Radius * cos(toRad(i)), white1Radius * sin(toRad(i)), radius * cosWhite1);
+        glVertex3f(white2Radius * cos(toRad(i)), white2Radius * sin(toRad(i)), radius * cosWhite2);
     }
     glEnd();
     
@@ -102,7 +102,7 @@ void drawEye(float x, float y, float z, float radius, float yaw, float pitch, fl
     glVertex3f(pupilRadius, 0, -radius * cosPupil);
     glVertex3f(0, 0, -radius * cosPupil);
     for (int angle = 360 / 12; angle < 360; angle += 360 / 12) {
-        glVertex3f(pupilRadius * cosf(toRad(angle)), pupilRadius * sinf(toRad(angle)), -radius * cosPupil);
+        glVertex3f(pupilRadius * cos(toRad(angle)), pupilRadius * sin(toRad(angle)), -radius * cosPupil);
     }
     glEnd();
     
@@ -110,8 +110,8 @@ void drawEye(float x, float y, float z, float radius, float yaw, float pitch, fl
     glVertex3f(pupilRadius, 0, -radius * cosPupil);
     glVertex3f(irisRadius, 0, -radius * cosIris);
     for (int i = 360/12; i < 360 + (360/12); i += 360/12) {
-        glVertex3f(pupilRadius * cosf(toRad(i)), pupilRadius * sinf(toRad(i)), -radius * cosPupil);
-        glVertex3f(irisRadius * cosf(toRad(i)), irisRadius * sinf(toRad(i)), -radius * cosIris);
+        glVertex3f(pupilRadius * cos(toRad(i)), pupilRadius * sin(toRad(i)), -radius * cosPupil);
+        glVertex3f(irisRadius * cos(toRad(i)), irisRadius * sin(toRad(i)), -radius * cosIris);
     }
     glEnd();
     
@@ -119,8 +119,8 @@ void drawEye(float x, float y, float z, float radius, float yaw, float pitch, fl
     glVertex3f(irisRadius, 0, -radius * cosIris);
     glVertex3f(white1Radius, 0, -radius * cosWhite1);
     for (int i = 360/12; i < 360 + (360/12); i += 360/12) {
-        glVertex3f(irisRadius * cosf(toRad(i)), irisRadius * sinf(toRad(i)), -radius * cosIris);
-        glVertex3f(white1Radius * cosf(toRad(i)), white1Radius * sinf(toRad(i)), -radius * cosWhite1);
+        glVertex3f(irisRadius * cos(toRad(i)), irisRadius * sin(toRad(i)), -radius * cosIris);
+        glVertex3f(white1Radius * cos(toRad(i)), white1Radius * sin(toRad(i)), -radius * cosWhite1);
     }
     glEnd();
     
@@ -128,8 +128,8 @@ void drawEye(float x, float y, float z, float radius, float yaw, float pitch, fl
     glVertex3f(white1Radius, 0, radius * -cosWhite1);
     glVertex3f(white2Radius, 0, radius * -cosWhite2);
     for (int i = 360/12; i < 360 + (360/12); i += 360/12) {
-        glVertex3f(white1Radius * cosf(toRad(i)), white1Radius * sinf(toRad(i)), -radius * cosWhite1);
-        glVertex3f(white2Radius * cosf(toRad(i)), white2Radius * sinf(toRad(i)), -radius * cosWhite2);
+        glVertex3f(white1Radius * cos(toRad(i)), white1Radius * sin(toRad(i)), -radius * cosWhite1);
+        glVertex3f(white2Radius * cos(toRad(i)), white2Radius * sin(toRad(i)), -radius * cosWhite2);
     }
     glEnd();
     

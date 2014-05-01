@@ -38,7 +38,7 @@
 
 #include "math.h"
 #include "stdio.h"
-#include "head.h"
+#include "Head.h"
 
 #include <iostream>
 
@@ -161,7 +161,7 @@ void activate_muscle ( HEAD *face, int m, float val)
                             dif       = vblen - fstart ;
                             tot       = fin - fstart ;
                             percent   = dif/tot ;
-                            newv      = (float) (cosf ( DTOR(percent*90.0)) ) ;
+                            newv      = (float) (cos ( DTOR(percent*90.0)) ) ;
                             
                             for ( l=0; l<3; l++)
                                 newp[l] = (vb[l] * cosv) * newv ;

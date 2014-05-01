@@ -38,7 +38,7 @@
 #include <GL/glu.h>
 
 #include "memory.h"     // Local memory allocation macros
-#include "head.h"	    // local header for the face
+#include "Head.h"	    // local header for the face
 
 // Forward declarations
 void calc_normal				( float*, float*, float*, float* ) ;

@@ -42,7 +42,7 @@
 #include <iostream>
 #include <fstream>
 
-#include "head.h"		// local header for the face data structure  
+#include "Head.h"		// local header for the face data structure
 #include "memory.h"
 
 void add_muscle_to_face			( MUSCLE*, HEAD* ) ;
