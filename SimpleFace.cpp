@@ -194,14 +194,21 @@ static void Key_h(void)
 	fprintf(stderr, "\n");
 }
 
-void trackPoint(glm::vec3 position) {
+void lookAtPoint(glm::vec3 position) {
 	glm::vec3 eye1Pos(eye1Info.x + eyeX, eye1Info.y + eyeY, eye1Info.z + eyeZ);
 	glm::vec3 eye2Pos(eye2Info.x + eyeX, eye2Info.y + eyeY, eye2Info.z + eyeZ);
 
-	eye1Info.yaw = atan2(position.x - eye1Pos.x, position.z - eye1Pos.z) * 180 / 3.14159265358979;
-	eye2Info.yaw = atan2(position.x - eye2Pos.x, position.z - eye2Pos.z) * 180 / 3.14159265358979;
-	eye1Info.pitch = atan2(position.y - eye1Pos.y, position.z - eye1Pos.z) * 180 / 3.14159265358979;
-	eye2Info.pitch = atan2(position.y - eye2Pos.y, position.z - eye2Pos.z) * 180 / 3.14159265358979;
+	eye1Info.yaw = (atan2(position.x - eye1Pos.x, position.z - eye1Pos.z) * 180 / 3.14159265358979) - rotateY;
+	eye2Info.yaw = (atan2(position.x - eye2Pos.x, position.z - eye2Pos.z) * 180 / 3.14159265358979) - rotateY;
+	eye1Info.pitch = (atan2(position.y - eye1Pos.y, position.z - eye1Pos.z) * 180 / 3.14159265358979) - rotateX;
+	eye2Info.pitch = (atan2(position.y - eye2Pos.y, position.z - eye2Pos.z) * 180 / 3.14159265358979) - rotateX;
+
+//	rotateY = atan2(position.x - eyeX, position.z - eyeZ);
+//	rotateX = atan2(position.y - eyeY, position.z - eyeZ);
+}
+
+void facePoint(glm::vec3 position){
+
 }
 
 // ========================================================================
@@ -298,13 +305,13 @@ void updateFace(int dt) {
 	}
 	static bool calc = true;
 	static int counter = 0;
-	counter++;
+	counter += 1;
 	if (counter > 15)
 		calc = true;
 	if (calc) {
-		float posX = ((rand() % 20) - 10) / 2;
-		float posY = ((rand() % 20) - 10) / 2;
-		trackPoint(glm::vec3(posX, posY, 25));
+		float posX = ((rand() % 20) - 10);
+		float posY = ((rand() % 20) - 10);
+		lookAtPoint(glm::vec3(posX, posY, 30));
 		calc = false;
 		counter = 0;
 	}
@@ -370,8 +377,8 @@ static void Animate(void)
 	// or transparent then display the muscles
 //	if ( face->rendermode == 0 || 
 //		 face->rendermode == 3 ) {
-	glDisable( GL_LIGHTING);
-	paint_muscles(face);
+	glDisable(GL_LIGHTING);
+//	paint_muscles(face);
 //	}
 
 	// Now flush the pipeline and
@@ -420,7 +427,7 @@ int main(int argc, char** argv)
 	sf::Window window;
 	window.create(sf::VideoMode(1024, 1024, 32), "Face", 7U, settings);
 	window.setFramerateLimit(60);
-	window.setPosition(sf::Vector2i(50, 190));//Temp
+	window.setPosition(sf::Vector2i(50, 190)); //Temp
 
 	// Initialize OpenGL
 	OpenGLInit();

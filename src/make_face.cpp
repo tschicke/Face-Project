@@ -88,6 +88,10 @@ HEAD *create_face(const char *f1, const char *f2, const char * f3) {
 	h = _new ( HEAD );
 
 	h->mouthOpen = false;
+
+	h->eyesLooking = false;
+	h->headLooking = false;
+
     h->transitioning = false;
     h->transitionCounter = 0;
     h->currentExpression = 0;

@@ -1,6 +1,8 @@
 #ifndef __HEAD__
 #define __HEAD__
 
+#include <glm/glm.hpp>
+
 typedef struct TAG {
 
 	int poly;      // an index to a tagged polygon
@@ -55,6 +57,13 @@ typedef struct POLYGON {
 typedef struct HEAD {
     
 	bool mouthOpen;
+
+	bool eyesLooking;
+	bool headLooking;
+	int lookingCounter;
+	glm::vec3 targetPoint;
+	glm::vec3 lastPoint;
+
     bool transitioning;
     int transitionCounter;
     int currentExpression;
