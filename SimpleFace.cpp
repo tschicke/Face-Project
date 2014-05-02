@@ -64,6 +64,7 @@ void drawEye(float x, float y, float z, float radius, float yaw, float pitch, fl
 EyeInfo eye1Info, eye2Info;
 int eyeYaw, eyePitch, eyeRoll;
 float eyeX, eyeY, eyeZ;
+float lookAtX, lookAtY, lookAtZ;
 
 GLfloat rotateX, rotateY;
 
@@ -199,16 +200,21 @@ void lookAtPoint(glm::vec3 position) {
 	glm::vec4 eye1Pos(eye1Info.x + eyeX, eye1Info.y + eyeY, eye1Info.z + eyeZ, 1);
 	glm::vec4 eye2Pos(eye2Info.x + eyeX, eye2Info.y + eyeY, eye2Info.z + eyeZ, 1);
 
-	glm::mat4 rotationMatrix =  glm::rotate(-(float) rotateY, glm::vec3(0.f, 1.f, 0.f)) * glm::rotate(-(float) rotateX, glm::vec3(1, 0, 0));
+	glm::mat4 rotationMatrix = glm::rotate(-(float) rotateY, glm::vec3(0.f, 1.f, 0.f)) * glm::rotate(-(float) rotateX, glm::vec3(1, 0, 0));
 
-//	eye1Pos = rotationMatrix * eye1Pos;
-//	eye2Pos = rotationMatrix * eye1Pos;
 	glm::vec4 rotatedPosition = rotationMatrix * glm::vec4(position, 1);
 
-	eye1Info.yaw = (atan2(rotatedPosition.x - eye1Pos.x, rotatedPosition.z - eye1Pos.z) * 180 / 3.14159265358979);
-	eye2Info.yaw = (atan2(rotatedPosition.x - eye2Pos.x, rotatedPosition.z - eye2Pos.z) * 180 / 3.14159265358979);
-//	eye1Info.pitch = (atan2(eye1Pos.y - rotatedPosition.y, rotatedPosition.z - eye1Pos.z) * 180 / 3.14159265358979);
-//	eye2Info.pitch = (atan2(eye2Pos.y - rotatedPosition.y, rotatedPosition.z - eye2Pos.z) * 180 / 3.14159265358979);
+	eye1Info.pitch = (atan2(eye1Pos.y - rotatedPosition.y, rotatedPosition.z - eye1Pos.z) * 180 / 3.14159265358979);
+	eye2Info.pitch = (atan2(eye2Pos.y - rotatedPosition.y, rotatedPosition.z - eye2Pos.z) * 180 / 3.14159265358979);
+
+
+	glm::mat4 eye1rotate = rotationMatrix * glm::rotate((float)eye1Info.pitch, glm::vec3(1, 0, 0));
+	glm::mat4 eye2rotate = rotationMatrix * glm::rotate((float)eye2Info.pitch, glm::vec3(1, 0, 0));
+	glm::vec4 eye1PitchPos = eye1rotate * glm::vec4(position, 1);
+	glm::vec4 eye2PitchPos = eye2rotate * glm::vec4(position, 1);
+
+//	eye1Info.yaw = (atan2(eye1PitchPos.x - eye1Pos.x, eye1PitchPos.z - eye1Pos.z) * 180 / 3.14159265358979);
+//	eye2Info.yaw = (atan2(eye2PitchPos.x - eye2Pos.x, eye2PitchPos.z - eye2Pos.z) * 180 / 3.14159265358979);
 
 	std::cout << "lookAt 1 yaw, pitch " << eye1Info.yaw << ' ' << eye1Info.pitch << '\n';
 	std::cout << "rotated position x, y, z " << rotatedPosition.x << ' ' << rotatedPosition.y << ' ' << rotatedPosition.z << '\n';
@@ -325,7 +331,10 @@ void updateFace(int dt) {
 	if (calc) {
 		float posX = ((rand() % 20) - 10);
 		float posY = ((rand() % 20) - 10);
-		lookAtPoint(glm::vec3(0, 0, 10));
+		lookAtX = 2;
+		lookAtY = 2;
+		lookAtZ = 10;
+		lookAtPoint(glm::vec3(lookAtX, lookAtY, lookAtZ));
 		calc = false;
 		counter = 0;
 	}
@@ -352,10 +361,30 @@ static void Animate(void)
 	// back off thirty units down the Z axis
 	glTranslatef(0.0f, 0.0f, -30.0f);
 
+	/*glLineWidth(10);
+	 glBegin(GL_LINES);
+	 glVertex3f(0, 0, 0);
+	 glVertex3f(10, 0, 0);
+	 glEnd();*/
+
+	glm::vec4 eye1Pos(eye1Info.x + eyeX, eye1Info.y + eyeY, eye1Info.z + eyeZ, 1);
+	glm::vec4 eye2Pos(eye2Info.x + eyeX, eye2Info.y + eyeY, eye2Info.z + eyeZ, 1);
+
 	glLineWidth(10);
 	glBegin(GL_LINES);
-	glVertex3f(0, 0, 0);
-	glVertex3f(10, 0, 0);
+	glColor3f(1, 0, 1);
+	glm::mat4 rotate = glm::rotate((float) rotateY, glm::vec3(0, 1, 0)) * glm::rotate((float) rotateX, glm::vec3(1, 0, 0));
+	glm::vec4 eye1PosRotated = rotate * eye1Pos;
+	glm::vec4 eye2PosRotated = rotate * eye2Pos;
+	glVertex3f(eye1PosRotated.x, eye1PosRotated.y, eye1PosRotated.z);
+	glVertex3f(lookAtX, lookAtY, lookAtZ);
+//	glColor3f(1, 0, 0);
+//	glVertex3f(eye1PosRotated.x, eye1PosRotated.y, eye1PosRotated.z);
+//	glVertex3f(lookAtX, eye1PosRotated.y, lookAtZ);
+//	glVertex3f(lookAtX, eye1PosRotated.y, lookAtZ);
+//	glVertex3f(lookAtX, lookAtY, lookAtZ);
+//	glVertex3f(eye2PosRotated.x, eye2PosRotated.y, eye2PosRotated.z);
+//	glVertex3f(lookAtX, lookAtY, lookAtZ);
 	glEnd();
 
 	// Use the keyboard to grab the rotations
@@ -392,7 +421,7 @@ static void Animate(void)
 	// the face could have been distorted
 	calculate_polygon_vertex_normal(face);
 //    glDisable(GL_LIGHTING);
-	paint_polygons(face, face->rendermode, 0);
+//	paint_polygons(face, face->rendermode, 0);
 
 	// if the rendering mode is wireframe
 	// or transparent then display the muscles
@@ -509,4 +538,5 @@ void FaceInit(void)
 	eyeX = 0;
 	eyeY = 2.8;
 	eyeZ = 6.4;
+	lookAtX = lookAtY = lookAtZ = 0;
 }
