@@ -199,7 +199,7 @@ void lookAtPoint(glm::vec3 position) {
 	glm::vec4 eye1Pos(eye1Info.x + eyeX, eye1Info.y + eyeY, eye1Info.z + eyeZ, 1);
 	glm::vec4 eye2Pos(eye2Info.x + eyeX, eye2Info.y + eyeY, eye2Info.z + eyeZ, 1);
 
-	glm::mat4 rotationMatrix = glm::rotate(-(float) rotateY, glm::vec3(0.f, 1.f, 0.f)) * glm::rotate((float) rotateX, glm::vec3(1, 0, 0));
+	glm::mat4 rotationMatrix =  glm::rotate(-(float) rotateY, glm::vec3(0.f, 1.f, 0.f)) * glm::rotate(-(float) rotateX, glm::vec3(1, 0, 0));
 
 //	eye1Pos = rotationMatrix * eye1Pos;
 //	eye2Pos = rotationMatrix * eye1Pos;
@@ -207,10 +207,15 @@ void lookAtPoint(glm::vec3 position) {
 
 	eye1Info.yaw = (atan2(rotatedPosition.x - eye1Pos.x, rotatedPosition.z - eye1Pos.z) * 180 / 3.14159265358979);
 	eye2Info.yaw = (atan2(rotatedPosition.x - eye2Pos.x, rotatedPosition.z - eye2Pos.z) * 180 / 3.14159265358979);
-	eye1Info.pitch = (atan2(rotatedPosition.y - eye1Pos.y, rotatedPosition.z - eye1Pos.z) * 180 / 3.14159265358979);
-	eye2Info.pitch = (atan2(rotatedPosition.y - eye2Pos.y, rotatedPosition.z - eye2Pos.z) * 180 / 3.14159265358979);
+//	eye1Info.pitch = (atan2(eye1Pos.y - rotatedPosition.y, rotatedPosition.z - eye1Pos.z) * 180 / 3.14159265358979);
+//	eye2Info.pitch = (atan2(eye2Pos.y - rotatedPosition.y, rotatedPosition.z - eye2Pos.z) * 180 / 3.14159265358979);
 
-	std::cout << "Eye1 Yaw " << eye1Info.yaw << '\n';
+	std::cout << "lookAt 1 yaw, pitch " << eye1Info.yaw << ' ' << eye1Info.pitch << '\n';
+	std::cout << "rotated position x, y, z " << rotatedPosition.x << ' ' << rotatedPosition.y << ' ' << rotatedPosition.z << '\n';
+	std::cout << "eye1 x diff " << rotatedPosition.x - eye1Pos.x << '\n';
+	std::cout << "eye1 y diff " << rotatedPosition.y - eye1Pos.y << '\n';
+	std::cout << "eye1 z diff " << rotatedPosition.z - eye1Pos.z << '\n';
+	std::cout << "rotateY, rotateX " << rotateY << ' ' << rotateX << '\n';
 
 //	rotateY = atan2(position.x - eyeX, position.z - eyeZ);
 //	rotateX = atan2(position.y - eyeY, position.z - eyeZ);
@@ -320,7 +325,7 @@ void updateFace(int dt) {
 	if (calc) {
 		float posX = ((rand() % 20) - 10);
 		float posY = ((rand() % 20) - 10);
-		lookAtPoint(glm::vec3(0, 0, 0));
+		lookAtPoint(glm::vec3(0, 0, 10));
 		calc = false;
 		counter = 0;
 	}
@@ -347,9 +352,15 @@ static void Animate(void)
 	// back off thirty units down the Z axis
 	glTranslatef(0.0f, 0.0f, -30.0f);
 
+	glLineWidth(10);
+	glBegin(GL_LINES);
+	glVertex3f(0, 0, 0);
+	glVertex3f(10, 0, 0);
+	glEnd();
+
 	// Use the keyboard to grab the rotations
-	glRotatef(rotateX, 1.0f, 0.0f, 0.0f);
 	glRotatef(rotateY, 0.0f, 1.0f, 0.0f);
+	glRotatef(rotateX, 1.0f, 0.0f, 0.0f);
 
 	glPushMatrix();
 	glLightfv(GL_LIGHT0, GL_POSITION, light_position);

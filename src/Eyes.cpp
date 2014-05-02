@@ -11,6 +11,8 @@
 #include <GL/gl.h>
 #include "Head.h"
 
+#include <iostream>
+
 float toRad(float deg){
     return deg * 3.14159265358979f / 180;
 }

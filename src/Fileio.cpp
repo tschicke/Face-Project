@@ -188,19 +188,19 @@ void read_muscles ( const char* FileName, HEAD* face )
       m->active = 0 ;
       m->mstat  = 0.0 ;
       
-      fprintf(stderr,"%s: %d\n========================\nhx: %2.2f hy: %2.2f hz: %2.2f\ntx: %2.2f ty: %2.2f tz: %2.2f\n fall start: %2.2f\n fall end: %2.2f\n zone: %2.2f\n clampv: %2.2f mstat: %2.2f\n\n",
-	     m->name, i, 
-	     m->head[0], 
-	     m->head[1], 
-	     m->head[2],
-	     m->tail[0], 
-	     m->tail[1],
-	     m->tail[2],
-	     m->fs,
-	     m->fe,
-	     m->zone,
-	     m->clampv,
-	     m->mstat ) ;
+//      fprintf(stderr,"%s: %d\n========================\nhx: %2.2f hy: %2.2f hz: %2.2f\ntx: %2.2f ty: %2.2f tz: %2.2f\n fall start: %2.2f\n fall end: %2.2f\n zone: %2.2f\n clampv: %2.2f mstat: %2.2f\n\n",
+//	     m->name, i,
+//	     m->head[0],
+//	     m->head[1],
+//	     m->head[2],
+//	     m->tail[0],
+//	     m->tail[1],
+//	     m->tail[2],
+//	     m->fs,
+//	     m->fe,
+//	     m->zone,
+//	     m->clampv,
+//	     m->mstat ) ;
 
       add_muscle_to_face ( m, face ) ;
 
