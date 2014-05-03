@@ -58,14 +58,12 @@ typedef struct HEAD {
     
 	bool mouthOpen;
 
-	bool eyesLooking;
-	bool headLooking;
-	int lookingCounter;
-	glm::vec3 targetPoint;
-	glm::vec3 lastPoint;
+	bool transitioningRotation;
+	int rotationTransitionCounter;
+	glm::vec3 startPosition, endPosition;
 
-    bool transitioning;
-    int transitionCounter;
+    bool transitioningExpression;
+    int expressionTransitionCounter;
     int currentExpression;
     int nextExpression;
 

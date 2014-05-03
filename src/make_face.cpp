@@ -89,14 +89,13 @@ HEAD *create_face(const char *f1, const char *f2, const char * f3) {
 
 	h->mouthOpen = false;
 
-	h->eyesLooking = false;
-	h->headLooking = false;
+	h->transitioningRotation = false;
+	h->rotationTransitionCounter = 0;
 
-    h->transitioning = false;
-    h->transitionCounter = 0;
+    h->transitioningExpression = false;
+    h->expressionTransitionCounter = 0;
     h->currentExpression = 0;
     h->nextExpression = 1;
-    
     
 	h->npolygons = 0;
 	h->npindices = 0;
