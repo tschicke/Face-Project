@@ -199,11 +199,6 @@ static void Key_h(void)
 void lookAtPoint(glm::vec3 position) {
 	const float pi = 3.14159265358979;
 
-//	rotateY = atan2(position.x, position.z) * 180 / pi;
-//	rotateX = atan2(-position.y, position.z) * 180 / pi;
-
-//	std::cout << "RotateX = " << rotateX << ", RotateY = " << rotateY << '\n';
-
 	glm::vec4 eye1Pos(eye1Info.x + eyeX, eye1Info.y + eyeY, eye1Info.z + eyeZ, 1);
 	glm::vec4 eye2Pos(eye2Info.x + eyeX, eye2Info.y + eyeY, eye2Info.z + eyeZ, 1);
 
@@ -224,7 +219,17 @@ void lookAtPoint(glm::vec3 position) {
 }
 
 void facePoint(glm::vec3 position) {
+	const float pi = 3.14159265358979;
 
+	glm::vec3 eyeSysPos(eyeX, eyeY, eyeZ);
+
+	glm::vec3 transformedPosition = position + glm::vec3(eyeX, eyeY, 0);
+
+	rotateY = atan2(transformedPosition.x - eyeSysPos.x, transformedPosition.z) * 180 / pi;
+
+	glm::vec4 rotatedPosition = glm::rotate(-(float)rotateY, 0.f, 1.f, 0.f) * glm::vec4(transformedPosition, 1);
+
+	rotateX = atan2(-(rotatedPosition.y - eyeSysPos.y), rotatedPosition.z) * 180 / pi;
 }
 
 // ========================================================================
@@ -327,9 +332,9 @@ void updateFace(int dt) {
 	if (calc) {
 		float posX = ((rand() % 20) - 10);
 		float posY = ((rand() % 20) - 10);
-		lookAtX = 2;
-		lookAtY = 2;
-		lookAtZ = 10;
+		lookAtX = 0;
+		lookAtY = 0;
+		lookAtZ = 30;
 		lookAtPoint(glm::vec3(lookAtX, lookAtY, lookAtZ));
 		calc = false;
 		counter = 0;
@@ -360,8 +365,9 @@ static void Animate(void)
 	glLineWidth(10);
 	glBegin(GL_LINES);
 	glColor3f(1, 1, 0);
-	glm::vec4 eye1Pos = glm::rotate((float) rotateX, glm::vec3(1, 0, 0)) * glm::rotate((float) rotateY, glm::vec3(0.f, 1.f, 0.f)) * glm::vec4(eye1Info.x + eyeX, eye1Info.y + eyeY, eye1Info.z + eyeZ, 1);
-	glVertex3f(eye1Pos.x, eye1Pos.y, eye1Pos.z);
+//	glm::vec4 eye1Pos = glm::rotate((float) rotateX, glm::vec3(1, 0, 0)) * glm::rotate((float) rotateY, glm::vec3(0.f, 1.f, 0.f)) * glm::vec4(eye1Info.x + eyeX, eye1Info.y + eyeY, eye1Info.z + eyeZ, 1);
+	glm::vec4 pos = glm::rotate((float)rotateY, 0.f, 1.f, 0.f) * glm::rotate((float)rotateX, 1.f, 0.f, 0.f) * glm::vec4(eyeX, eyeY, eyeZ, 1);
+	glVertex3f(pos.x, pos.y, pos.z);
 	glVertex3f(lookAtX, lookAtY, lookAtZ);
 	glEnd();
 
