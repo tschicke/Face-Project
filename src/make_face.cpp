@@ -42,11 +42,11 @@
 #include <stdio.h>          // C header for standard I/O                     
 #include "memory.h"         // Local memory allocation macros                
 #include "Head.h"			// local header for the face
-
 #include <iostream>
 
 void read_polygon_line(const char*, HEAD*);
 void read_polygon_indices(const char*, HEAD*);
+void read_polygon_colors(const char *, HEAD*);
 void read_vertex_constrictors(const char *, HEAD*);
 void make_face(HEAD*);
 void add_polygon_to_face(POLYGON*, HEAD*);
@@ -82,34 +82,36 @@ void face_reset(HEAD *face) {
 // create the default structures for the face and retrun a pointer.
 //
 
-HEAD *create_face(const char *f1, const char *f2, const char * f3) {
+HEAD *create_face(const char *f1, const char *f2, const char * f3, const char * f4) {
 	HEAD *h;
 
 	h = _new ( HEAD );
 
 	h->mouthOpen = false;
+	h->lookingAround = false;
 
 	h->transitioningRotation = false;
 	h->rotationTransitionCounter = 0;
 
-    h->transitioningExpression = false;
-    h->expressionTransitionCounter = 0;
-    h->currentExpression = 0;
-    h->nextExpression = 1;
-    
+	h->transitioningExpression = false;
+	h->expressionTransitionCounter = 0;
+	h->currentExpression = 0;
+	h->nextExpression = 1;
+
 	h->npolygons = 0;
 	h->npindices = 0;
 	h->npolylinenodes = 0;
-    h->nvertexconstrictiontags = 0;
+	h->nvertexconstrictiontags = 0;
 	h->nmuscles = 0;
 	h->current_muscle = 0;
 	h->current_exp = 0;
-    //h->rendermode = 0;
-	h->rendermode = 1;//TODO Change back to 0
+	//h->rendermode = 0;
+	h->rendermode = 1; //TODO Change back to 0
 
 	read_polygon_indices(f1, h);
 	read_polygon_line(f2, h);
-    read_vertex_constrictors(f3, h);
+	read_polygon_colors(f3, h);
+	read_vertex_constrictors(f4, h);
 
 	make_face(h);
 
@@ -145,22 +147,27 @@ void make_face(HEAD *face) {
 			for (j = 0; j < 3; j++) {
 				p->vertex[j] = _new ( VERTEX );
 				p->vertex[j]->np = 0;
-                p->vertex[j]->isLL = face->tagList[parray[j + 1] * 4];
-                p->vertex[j]->isUL = face->tagList[parray[j + 1] * 4 + 1];
-                p->vertex[j]->isLEL = face->tagList[parray[j + 1] * 4 + 2];
-                p->vertex[j]->isUEL = face->tagList[parray[j + 1] * 4 + 3];
+				p->vertex[j]->isLL = face->tagList[parray[j + 1] * 4];
+				p->vertex[j]->isUL = face->tagList[parray[j + 1] * 4 + 1];
+				p->vertex[j]->isLEL = face->tagList[parray[j + 1] * 4 + 2];
+				p->vertex[j]->isUEL = face->tagList[parray[j + 1] * 4 + 3];
 			}
 
-			for (j = 0; j < 3; j++)
+			for (j = 0; j < 3; j++) {
 				p->vertex[0]->nxyz[j] = p->vertex[0]->xyz[j] = face->polyline[p2 * 3 + j];
-            
+				p->vertex[0]->color[j] = face->polyColor[p2 * 3 + j];
+			}
 
-			for (j = 0; j < 3; j++)
+			for (j = 0; j < 3; j++) {
 				p->vertex[1]->nxyz[j] = p->vertex[1]->xyz[j] = face->polyline[p3 * 3 + j];
+				p->vertex[1]->color[j] = face->polyColor[p3 * 3 + j];
+			}
 
-			for (j = 0; j < 3; j++)
+			for (j = 0; j < 3; j++) {
 				p->vertex[2]->nxyz[j] = p->vertex[2]->xyz[j] = face->polyline[p4 * 3 + j];
-            
+				p->vertex[2]->color[j] = face->polyColor[p4 * 3 + j];
+			}
+
 			add_polygon_to_face(p, face);
 			reflect_polygon(p, face);
 		} else {
@@ -168,15 +175,17 @@ void make_face(HEAD *face) {
 			for (j = 0; j < 3; j++) {
 				p->vertex[j] = _new ( VERTEX );
 				p->vertex[j]->np = 0;
-                p->vertex[j]->isLL = face->tagList[parray[j] * 4];
-                p->vertex[j]->isUL = face->tagList[parray[j] * 4 + 1];
-                p->vertex[j]->isLEL = face->tagList[parray[j] * 4 + 2];
-                p->vertex[j]->isUEL = face->tagList[parray[j] * 4 + 3];
+				p->vertex[j]->isLL = face->tagList[parray[j] * 4];
+				p->vertex[j]->isUL = face->tagList[parray[j] * 4 + 1];
+				p->vertex[j]->isLEL = face->tagList[parray[j] * 4 + 2];
+				p->vertex[j]->isUEL = face->tagList[parray[j] * 4 + 3];
 			}
 
 			for (k = 0; k < 3; k++) {
-				for (j = 0; j < 3; j++)
+				for (j = 0; j < 3; j++) {
 					p->vertex[k]->nxyz[j] = p->vertex[k]->xyz[j] = face->polyline[parray[k] * 3 + j];
+					p->vertex[k]->color[j] = face->polyColor[parray[k] * 3 + j];
+				}
 			}
 
 			add_polygon_to_face(p, face);
@@ -184,23 +193,29 @@ void make_face(HEAD *face) {
 
 			p = _new ( POLYGON );
 			for (j = 0; j < 3; j++) {
-                int poly = (j == 0 ? p1 : (j == 1 ? p3 : p4));
+				int poly = (j == 0 ? p1 : (j == 1 ? p3 : p4));
 				p->vertex[j] = _new ( VERTEX );
 				p->vertex[j]->np = 0;
-                p->vertex[j]->isLL = face->tagList[poly * 4];
-                p->vertex[j]->isUL = face->tagList[poly * 4 + 1];
-                p->vertex[j]->isLEL = face->tagList[poly * 4 + 2];
-                p->vertex[j]->isUEL = face->tagList[poly * 4 + 3];
+				p->vertex[j]->isLL = face->tagList[poly * 4];
+				p->vertex[j]->isUL = face->tagList[poly * 4 + 1];
+				p->vertex[j]->isLEL = face->tagList[poly * 4 + 2];
+				p->vertex[j]->isUEL = face->tagList[poly * 4 + 3];
 			}
 
-			for (j = 0; j < 3; j++)
+			for (j = 0; j < 3; j++) {
 				p->vertex[0]->nxyz[j] = p->vertex[0]->xyz[j] = face->polyline[p1 * 3 + j];
+				p->vertex[0]->color[j] = face->polyColor[p1 * 3 + j];
+			}
 
-			for (j = 0; j < 3; j++)
+			for (j = 0; j < 3; j++) {
 				p->vertex[1]->nxyz[j] = p->vertex[1]->xyz[j] = face->polyline[p3 * 3 + j];
+				p->vertex[1]->color[j] = face->polyColor[p3 * 3 + j];
+			}
 
-			for (j = 0; j < 3; j++)
+			for (j = 0; j < 3; j++) {
 				p->vertex[2]->nxyz[j] = p->vertex[2]->xyz[j] = face->polyline[p4 * 3 + j];
+				p->vertex[2]->color[j] = face->polyColor[p4 * 3 + j];
+			}
 
 			add_polygon_to_face(p, face);
 			reflect_polygon(p, face);
@@ -241,39 +256,47 @@ void add_polygon_to_face(POLYGON *p, HEAD *face) {
 
 void reflect_polygon(POLYGON *poly, HEAD *face) {
 	POLYGON *newp;
-	float temp[3];
+	float temp[3], tempColor[3];
 	int i, j;
 
 	// Allocate memory for the new polygon.
 	newp = _new ( POLYGON );
 	for (j = 0; j < 3; j++) {
-        int index = (j == 0 ? 1 : (j == 1 ? 0 : 2));
+		int index = (j == 0 ? 1 : (j == 1 ? 0 : 2));
 		newp->vertex[j] = _new ( VERTEX );
 		newp->vertex[j]->np = 0;
-        newp->vertex[j]->isLL = poly->vertex[index]->isLL;
-        newp->vertex[j]->isUL = poly->vertex[index]->isUL;
-        newp->vertex[j]->isLEL = poly->vertex[index]->isLEL;
-        newp->vertex[j]->isUEL = poly->vertex[index]->isUEL;
+		newp->vertex[j]->isLL = poly->vertex[index]->isLL;
+		newp->vertex[j]->isUL = poly->vertex[index]->isUL;
+		newp->vertex[j]->isLEL = poly->vertex[index]->isLEL;
+		newp->vertex[j]->isUEL = poly->vertex[index]->isUEL;
 	}
 
 	// Load the old polygon values.
 	for (i = 0; i < 3; i++)
-		for (j = 0; j < 3; j++)
+		for (j = 0; j < 3; j++) {
 			newp->vertex[i]->nxyz[j] = newp->vertex[i]->xyz[j] = poly->vertex[i]->xyz[j];
+			newp->vertex[i]->color[j] = poly->vertex[i]->color[j];
+		}
 
 	// flip the X component.
 	for (i = 0; i < 3; i++)
 		newp->vertex[i]->nxyz[0] = newp->vertex[i]->xyz[0] = -newp->vertex[i]->xyz[0];
 
 	// Re-order the vertices, flip 0 and 1.
-	for (j = 0; j < 3; j++)
+	for (j = 0; j < 3; j++) {
 		temp[j] = newp->vertex[0]->xyz[j];
+		tempColor[j] = newp->vertex[0]->color[j];
+	}
 
-	for (j = 0; j < 3; j++)
+	for (j = 0; j < 3; j++) {
 		newp->vertex[0]->nxyz[j] = newp->vertex[0]->xyz[j] = newp->vertex[1]->xyz[j];
+		newp->vertex[0]->color[j] = newp->vertex[1]->color[j];
+	}
 
-	for (j = 0; j < 3; j++)
+	for (j = 0; j < 3; j++) {
 		newp->vertex[1]->nxyz[j] = newp->vertex[1]->xyz[j] = temp[j];
+		newp->vertex[1]->color[j] = tempColor[j];
+	}
 
 	add_polygon_to_face(newp, face);
 }
@@ -474,7 +497,7 @@ void data_struct(HEAD *face) {
 			j++;
 
 		} // end while
-	}  // end for i
+	} // end for i
 }
 
 // ========================================================================= 
@@ -491,7 +514,7 @@ void make_expression(HEAD *face, int e) {
 #endif
 	int m;
 
-	fprintf(stderr, "\n%s\n", face->expression[e]->name );
+	fprintf(stderr, "\n%s\n", face->expression[e]->name);
 
 #if 0
 //  Check the FileName
@@ -507,29 +530,29 @@ void make_expression(HEAD *face, int e) {
 
 		activate_muscle(face, m, muscle_contraction);
 
-		fprintf(stderr, "muscle:%d contract: %f\n", m, muscle_contraction );
+//		fprintf(stderr, "muscle:%d contract: %f\n", m, muscle_contraction);
 	}
 
 #if 0
-				fprintf (OutFile, "%s\n","===============");
-				fclose ( OutFile );
+	fprintf (OutFile, "%s\n","===============");
+	fclose ( OutFile );
 #endif
 
-			}
+}
 
-void transitionExpression(HEAD *face, int e1, int e2, int timePassed, int totalTime){
-    printf("\n%s to %s\n", face->expression[e1]->name, face->expression[e2]->name);
+void transitionExpression(HEAD *face, int e1, int e2, int timePassed, int totalTime) {
+//	printf("\n%s to %s\n", face->expression[e1]->name, face->expression[e2]->name);
 
-    for(int m = 0; m < face->nmuscles; ++m){
-        float fraction = (float) timePassed / totalTime;
+	for (int m = 0; m < face->nmuscles; ++m) {
+		float fraction = (float) timePassed / totalTime;
 //        float muscleContraction = (face->expression[e1]->m[m] * (1 - fraction)) + (face->expression[e2]->m[m] * fraction);//Linear
 
 //        float muscleContraction = ((face->expression[e2]->m[m] - face->expression[e1]->m[m]) * fraction) + face->expression[e1]->m[m];//Linear
 
-        float cosFrac = (cos(fraction * 3.14159265358979f) + 1) / 2;
-        float muscleContraction = (face->expression[e1]->m[m] * cosFrac) + (face->expression[e2]->m[m] * (1 - cosFrac));//Cosine
+		float cosFrac = (cos(fraction * 3.14159265358979f) + 1) / 2;
+		float muscleContraction = (face->expression[e1]->m[m] * cosFrac) + (face->expression[e2]->m[m] * (1 - cosFrac)); //Cosine
 
-        activate_muscle(face, m, muscleContraction);
-    }
+		activate_muscle(face, m, muscleContraction);
+	}
 }
 
