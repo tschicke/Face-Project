@@ -40,6 +40,7 @@ typedef struct VERTEX {
 
 	float xyz[3];     // x,y,z of the vertex (modified)
 	float nxyz[3];     // x,y,z of the vertex (never modified)
+	float color[3];
 	int np;     // number of polygons associated with node
 	int plist[30];     // list of polygons associated with node
 	float norm[3];     // polygon vertex normal
@@ -57,15 +58,14 @@ typedef struct POLYGON {
 typedef struct HEAD {
     
 	bool mouthOpen;
+	bool lookingAround;
 
-	bool eyesLooking;
-	bool headLooking;
-	int lookingCounter;
-	glm::vec3 targetPoint;
-	glm::vec3 lastPoint;
+	bool transitioningRotation;
+	int rotationTransitionCounter;
+	glm::vec3 startPosition, endPosition;
 
-    bool transitioning;
-    int transitionCounter;
+    bool transitioningExpression;
+    int expressionTransitionCounter;
     int currentExpression;
     int nextExpression;
 
@@ -74,6 +74,7 @@ typedef struct HEAD {
 
 	int npolylinenodes;  // number of nodes in the poly line
 	float *polyline;  // xyz nodes in the poly line
+	float *polyColor;
     
     int nvertexconstrictiontags;
     bool * tagList;
