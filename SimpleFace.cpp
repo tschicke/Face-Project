@@ -53,22 +53,27 @@ void activate_muscle(HEAD*, int, float);
 void face_reset(HEAD*);
 void make_expression(HEAD*, int);
 void transitionExpression(HEAD *face, int e1, int e2, int timePassed, int totalTime);
-HEAD *create_face(const char*, const char*, const char *);
+HEAD *create_face(const char*, const char*, const char *, const char *);
 
 struct EyeInfo;
 
 EyeInfo initEyeInfo(float x, float y, float z, int yaw, int pitch, int roll, float size, float radius);
-void drawEyeSystem(float sysX, float sysY, float sysZ, int sysPitch, int sysYaw, int sysRoll, EyeInfo eye1Info, EyeInfo eye2Info);
+void drawEyeSystem(float sysX, float sysY, float sysZ, int sysPitch, int sysYaw, int sysRoll, EyeInfo& eye1Info, EyeInfo& eye2Info, bool shouldBlink);
 void drawEye(float x, float y, float z, float radius, float yaw, float pitch, float roll);
 
 EyeInfo eye1Info, eye2Info;
 int eyeYaw, eyePitch, eyeRoll;
 float eyeX, eyeY, eyeZ;
 float lookAtX, lookAtY, lookAtZ;
+int expressionAnimationTime = 500000, rotationAnimationTime = 500000, blinkAnimationTime = 100000;
 
 GLfloat rotateX, rotateY;
 
 HEAD *face;
+
+float max(float a, float b){
+	return (a > b ? a : b);
+}
 
 // ======================================================================== 
 // Key bindings for callback proceedures
@@ -116,7 +121,6 @@ static void Key_C(void)
 
 }
 static void Key_n(void) {
-	std::cout << "Key_n\n";
 	face->current_muscle++;
 	if (face->current_muscle >= face->nmuscles)
 		face->current_muscle = 0;
@@ -126,12 +130,25 @@ static void Key_n(void) {
 }
 
 static void Key_N(void) {
-	std::cout << "Key_N\n";
 	face->current_muscle--;
 	if (face->current_muscle < 0)
 		face->current_muscle = face->nmuscles - 1;
 
 	std::cout << face->muscle[face->current_muscle]->name << '\n';
+}
+
+static void Key_q() {
+	face->transitioningRotation = true;
+	face->startPosition = glm::vec3(20, 10, 15);
+	face->endPosition = glm::vec3(0, 0, 15);
+}
+
+static void Key_l() {
+	face->lookingAround = !face->lookingAround;
+}
+
+static void Key_p() {
+	face->shouldBlink = !face->shouldBlink;
 }
 
 static void Key_up(void) {
@@ -156,7 +173,17 @@ static void Key_R(void) {
 	face->current_exp = 0;
 }
 static void Key_T() {
-	face->transitioning = true;
+	if (!face->transitioningExpression) {
+		face->currentExpression++;
+		face->nextExpression++;
+		if (face->currentExpression >= face->nexpressions) {
+			face->currentExpression = 0;
+		}
+		if (face->nextExpression >= face->nexpressions) {
+			face->nextExpression = 0;
+		}
+	}
+	face->transitioningExpression = true;
 }
 static void Key_w(void) {
 	FILE *OutFile;
@@ -196,35 +223,99 @@ static void Key_h(void)
 	fprintf(stderr, "\n");
 }
 
-void lookAtPoint(glm::vec3 position) {
+glm::vec2 getAnglesToLookAtPoint(glm::vec3 position, EyeInfo eyeInfo) {
 	const float pi = 3.14159265358979;
 
-//	rotateY = atan2(position.x, position.z) * 180 / pi;
-//	rotateX = atan2(-position.y, position.z) * 180 / pi;
-
-//	std::cout << "RotateX = " << rotateX << ", RotateY = " << rotateY << '\n';
-
-	glm::vec4 eye1Pos(eye1Info.x + eyeX, eye1Info.y + eyeY, eye1Info.z + eyeZ, 1);
-	glm::vec4 eye2Pos(eye2Info.x + eyeX, eye2Info.y + eyeY, eye2Info.z + eyeZ, 1);
+	glm::vec4 eyePos(eyeInfo.x + eyeX, eyeInfo.y + eyeY, eyeInfo.z + eyeZ, 1);
 
 	glm::mat4 rotationMatrix = glm::rotate(-(float) rotateX, glm::vec3(1, 0, 0)) * glm::rotate(-(float) rotateY, glm::vec3(0.f, 1.f, 0.f));
 
 	glm::vec4 rotatedPosition = rotationMatrix * glm::vec4(position, 1);
 
-	eye1Info.yaw = (atan2(rotatedPosition.x - eye1Pos.x, rotatedPosition.z - eye1Pos.z) * 180 / pi);
-	eye2Info.yaw = (atan2(rotatedPosition.x - eye2Pos.x, rotatedPosition.z - eye2Pos.z) * 180 / pi);
+	float yaw = (atan2(rotatedPosition.x - eyePos.x, rotatedPosition.z - eyePos.z) * 180 / pi);
 
-	glm::mat4 eye1Transform = glm::translate(glm::vec3(eye1Pos)) * glm::rotate(-(float) eye1Info.yaw, glm::vec3(0, 1, 0)) * glm::translate(-glm::vec3(eye1Pos)) * rotationMatrix;
-	glm::vec4 eye1TransformedPosition = eye1Transform * glm::vec4(position, 1);
-	glm::mat4 eye2Transform = glm::translate(glm::vec3(eye2Pos)) * glm::rotate(-(float) eye2Info.yaw, glm::vec3(0, 1, 0)) * glm::translate(-glm::vec3(eye2Pos)) * rotationMatrix;
-	glm::vec4 eye2TransformedPosition = eye2Transform * glm::vec4(position, 1);
+	glm::mat4 eyeTransform = glm::translate(glm::vec3(eyePos)) * glm::rotate(-(float) yaw, glm::vec3(0, 1, 0)) * glm::translate(-glm::vec3(eyePos)) * rotationMatrix;
+	glm::vec4 eyeTransformedPosition = eyeTransform * glm::vec4(position, 1);
 
-	eye1Info.pitch = (atan2(eye1Pos.y - eye1TransformedPosition.y, eye1TransformedPosition.z - eye1Pos.z) * 180 / pi);
-	eye2Info.pitch = (atan2(eye2Pos.y - eye2TransformedPosition.y, eye2TransformedPosition.z - eye2Pos.z) * 180 / pi);
+	float pitch = (atan2(eyePos.y - eyeTransformedPosition.y, eyeTransformedPosition.z - eyePos.z) * 180 / pi);
+
+	return glm::vec2(pitch, yaw);
+}
+
+void lookAtPoint(glm::vec3 position) {
+	glm::vec2 eye1Angles = getAnglesToLookAtPoint(position, eye1Info);
+	glm::vec2 eye2Angles = getAnglesToLookAtPoint(position, eye2Info);
+
+	eye1Info.pitch = eye1Angles.x;
+	eye2Info.pitch = eye2Angles.x;
+	eye1Info.yaw = eye1Angles.y;
+	eye2Info.yaw = eye2Angles.y;
+}
+
+glm::vec2 getAnglesToFacePoint(glm::vec3 position) {
+	const float pi = 3.14159265358979;
+
+	glm::vec3 eyeSysPos(eyeX, eyeY, eyeZ);
+
+	glm::vec3 transformedPosition = position + glm::vec3(eyeX, eyeY, 0);
+
+	float yaw = atan2(position.x - eyeSysPos.x, position.z) * 180 / pi;
+
+	glm::vec4 rotatedPosition = glm::rotate(-(float) yaw, glm::vec3(0, 1, 0)) * glm::vec4(position, 1);
+
+	float pitch = atan2(-(rotatedPosition.y - eyeSysPos.y), rotatedPosition.z) * 180 / pi;
+
+	return glm::vec2(pitch, yaw);
 }
 
 void facePoint(glm::vec3 position) {
+	glm::vec2 angles = getAnglesToFacePoint(position);
+	rotateX = angles.x;
+	rotateY = angles.y;
+}
 
+void transitionRotation(int dt, int animationTime) {
+	bool finishedAnimation = false;
+	face->rotationTransitionCounter += dt;
+	if (face->rotationTransitionCounter > animationTime) {
+		face->rotationTransitionCounter = animationTime;
+		finishedAnimation = true;
+	}
+	float fracHeadStart = 1 / 4.f; //Fraction through animation time to start rotating
+	float headFracTimePassed = (face->rotationTransitionCounter - fracHeadStart * animationTime) * (1 / (1 - fracHeadStart)) / (float) animationTime;
+	headFracTimePassed = (headFracTimePassed < 0 ? 0 : headFracTimePassed);
+	float eyeFracTimePassed = face->rotationTransitionCounter * (1 / (1 - fracHeadStart)) / (float) animationTime;
+	eyeFracTimePassed = (eyeFracTimePassed > 1 ? 1 : eyeFracTimePassed);
+
+	if (!face->transitioningExpression && eyeFracTimePassed == 1) {
+		face->transitioningExpression = true;
+		face->currentExpression = face->nextExpression;
+		face->nextExpression = rand() % face->nexpressions;
+	}
+
+	//Rotate Head
+	glm::vec2 startHeadAngles = getAnglesToFacePoint(face->startPosition);
+	glm::vec2 endHeadAngles = getAnglesToFacePoint(face->endPosition);
+	rotateX = startHeadAngles.x + headFracTimePassed * (endHeadAngles.x - startHeadAngles.x);
+	rotateY = startHeadAngles.y + headFracTimePassed * (endHeadAngles.y - startHeadAngles.y);
+
+	//Rotate Eye1
+	glm::vec2 startEye1Angles = getAnglesToLookAtPoint(face->startPosition, eye1Info);
+	glm::vec2 endEye1Angles = getAnglesToLookAtPoint(face->endPosition, eye1Info);
+	eye1Info.pitch = startEye1Angles.x + eyeFracTimePassed * (endEye1Angles.x - startEye1Angles.x);
+	eye1Info.yaw = startEye1Angles.y + eyeFracTimePassed * (endEye1Angles.y - startEye1Angles.y);
+
+	//Rotate Eye2
+	glm::vec2 startEye2Angles = getAnglesToLookAtPoint(face->startPosition, eye2Info);
+	glm::vec2 endEye2Angles = getAnglesToLookAtPoint(face->endPosition, eye2Info);
+	eye2Info.pitch = startEye2Angles.x + eyeFracTimePassed * (endEye2Angles.x - startEye2Angles.x);
+	eye2Info.yaw = startEye2Angles.y + eyeFracTimePassed * (endEye2Angles.y - startEye2Angles.y);
+
+	if (finishedAnimation) {
+		face->transitioningRotation = false;
+		face->rotationTransitionCounter = 0;
+		face->startPosition = face->endPosition;
+	}
 }
 
 // ========================================================================
@@ -289,6 +380,12 @@ void input(sf::Event event) {
 			Key_T();
 		} else if (event.key.code == sf::Keyboard::M) {
 			face->mouthOpen = !(face->mouthOpen);
+		} else if (event.key.code == sf::Keyboard::Q) {
+			Key_q();
+		} else if (event.key.code == sf::Keyboard::L) {
+			Key_l();
+		} else if (event.key.code == sf::Keyboard::P) {
+			Key_p();
 		}
 	} else if (event.type == sf::Event::Resized) {
 		ResizeWindow(event.size.width, event.size.height);
@@ -297,40 +394,50 @@ void input(sf::Event event) {
 }
 
 void updateFace(int dt) {
-	if (face->transitioning) {
+	if (face->transitioningExpression) {
 		bool finishedAnimation = false;
-		face->transitionCounter += dt;
-		if (face->transitionCounter > 1000000) {
-			face->transitionCounter = 1000000;
+		face->expressionTransitionCounter += dt;
+		if (face->expressionTransitionCounter > expressionAnimationTime) {
+			face->expressionTransitionCounter = expressionAnimationTime;
 			finishedAnimation = true;
 		}
 		face_reset(face);
-		transitionExpression(face, face->currentExpression, face->nextExpression, face->transitionCounter, 1000000);
+		transitionExpression(face, face->currentExpression, face->nextExpression, face->expressionTransitionCounter, expressionAnimationTime);
 		if (finishedAnimation) {
-			face->currentExpression++;
-			face->nextExpression++;
-			if (face->currentExpression >= face->nexpressions) {
-				face->currentExpression = 0;
-			}
-			if (face->nextExpression >= face->nexpressions) {
-				face->nextExpression = 0;
-			}
-			face->transitioning = false;
-			face->transitionCounter = 0;
+			face->transitioningExpression = false;
+			face->expressionTransitionCounter = 0;
 		}
 	}
+	if (face->transitioningRotation) {
+		transitionRotation(dt, rotationAnimationTime);
+	} else if (face->lookingAround) {
+		face->rotationTransitionCounter += dt;
+		if (face->rotationTransitionCounter > 2000000) {
+			face->endPosition.x = (((rand() / (float) RAND_MAX) * 2) - 1) * 7;
+			face->endPosition.y = (((rand() / (float) RAND_MAX) * 2) - 1) * 7;
+			face->endPosition.z = 20;
+			face->rotationTransitionCounter = 0;
+			face->transitioningRotation = true;
+		}
+	}
+
+	eye1Info.eyelidCounter += dt;
+	eye1Info.eyelidCounter = (eye1Info.eyelidCounter > 20000000 ? 20000000 : eye1Info.eyelidCounter);
+	eye2Info.eyelidCounter += dt;
+	eye2Info.eyelidCounter = (eye2Info.eyelidCounter > 20000000 ? 20000000 : eye2Info.eyelidCounter);
+
 	static bool calc = true;
 	static int counter = 0;
 	counter += 1;
 	if (counter < 15)
 		calc = true;
 	if (calc) {
-		float posX = ((rand() % 20) - 10);
-		float posY = ((rand() % 20) - 10);
-		lookAtX = 2;
-		lookAtY = 2;
-		lookAtZ = 10;
-		lookAtPoint(glm::vec3(lookAtX, lookAtY, lookAtZ));
+//		lookAtX = ((rand() % 20) - 10);
+//		lookAtY = ((rand() % 20) - 10);
+		lookAtX = -20;
+		lookAtY = 1;
+		lookAtZ = 0;
+//		facePoint(glm::vec3(0.36397, 0.36397, 30));
 		calc = false;
 		counter = 0;
 	}
@@ -357,15 +464,16 @@ static void Animate(void)
 	// back off thirty units down the Z axis
 	glTranslatef(0.0f, 0.0f, -30.0f);
 
-	glLineWidth(10);
-	glBegin(GL_LINES);
-	glColor3f(1, 1, 0);
-	glm::vec4 eye1Pos = glm::rotate((float) rotateX, glm::vec3(1, 0, 0)) * glm::rotate((float) rotateY, glm::vec3(0.f, 1.f, 0.f)) * glm::vec4(eye1Info.x + eyeX, eye1Info.y + eyeY, eye1Info.z + eyeZ, 1);
-	glVertex3f(eye1Pos.x, eye1Pos.y, eye1Pos.z);
-	glVertex3f(lookAtX, lookAtY, lookAtZ);
-	glEnd();
+//	glLineWidth(10);
+//	glBegin(GL_LINES);
+//	glColor3f(1, 1, 0);
+//	glm::vec4 eye1Pos = glm::rotate((float) rotateX, glm::vec3(1, 0, 0)) * glm::rotate((float) rotateY, glm::vec3(0.f, 1.f, 0.f)) * glm::vec4(eye1Info.x + eyeX, eye1Info.y + eyeY, eye1Info.z + eyeZ, 1);
+//	glm::vec4 pos = glm::rotate((float) rotateY, 0.f, 1.f, 0.f) * glm::rotate((float) rotateX, 1.f, 0.f, 0.f) * glm::vec4(eyeX, eyeY, eyeZ, 1);
+//	glVertex3f(0, 0, 0);
+//	glVertex3f(face->endPosition.x , face->endPosition.y, face->endPosition.z);
+//	glEnd();
 
-	// Use the keyboard to grab the rotations
+// Use the keyboard to grab the rotations
 	glRotatef(rotateY, 0.0f, 1.0f, 0.0f);
 	glRotatef(rotateX, 1.0f, 0.0f, 0.0f);
 
@@ -378,7 +486,7 @@ static void Animate(void)
 	//NEW BLOCK
 	glDisable(GL_LIGHTING);
 
-	drawEyeSystem(eyeX, eyeY, eyeZ, eyePitch, eyeYaw, eyeRoll, eye1Info, eye2Info);
+	drawEyeSystem(eyeX, eyeY, eyeZ, eyePitch, eyeYaw, eyeRoll, eye1Info, eye2Info, face->shouldBlink);
 
 //COLOR FACE
 	glEnable(GL_LIGHTING);
@@ -429,7 +537,7 @@ void OpenGLInit(void)
 	glEnable(GL_DEPTH_TEST);
 	glDepthFunc(GL_LESS);
 	glCullFace(GL_FRONT_AND_BACK);
-	glClearColor(1, 0, 1, 1);
+	glClearColor(.9, .9, .9, 1);
 
 //	GLfloat specular[] = { 0.3f, 0.3f, 0.3f, 1.0f };
 //	GLfloat shininess[] = { 1.f };
@@ -505,16 +613,16 @@ int main(int argc, char** argv)
 
 void FaceInit(void)
 		{
-	face = create_face("face-data/index.dat", "face-data/faceline.dat", "face-data/VertexZones.dat");
+	face = create_face("face-data/index.dat", "face-data/faceline.dat", "face-data/face_colors.dat", "face-data/VertexZones.dat");
 	read_muscles("face-data/muscle.dat", face);
 	read_expression_macros("face-data/expression-macros.dat", face);
 	data_struct(face);
 
-	eye1Info = initEyeInfo(-2.05, 0, 0, 0, 0, 0, 0, 1.2);
-	eye2Info = initEyeInfo(2.05, 0, 0, 0, 0, 0, 0, 1.2);
+	eye1Info = initEyeInfo(-2.026, 0, 0, 0, 0, 0, 0, 1.1);
+	eye2Info = initEyeInfo(2.026, 0, 0, 0, 0, 0, 0, 1.1);
 	eyeYaw = eyePitch = eyeRoll = 0;
 	eyeX = 0;
-	eyeY = 2.8;
-	eyeZ = 6.4;
+	eyeY = 2.9;
+	eyeZ = 6.6;
 	lookAtX = lookAtY = lookAtZ = 0;
 }
