@@ -89,6 +89,7 @@ HEAD *create_face(const char *f1, const char *f2, const char * f3, const char * 
 
 	h->mouthOpen = false;
 	h->lookingAround = false;
+	h->shouldBlink = false;
 
 	h->transitioningRotation = false;
 	h->rotationTransitionCounter = 0;

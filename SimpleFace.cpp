@@ -58,17 +58,22 @@ HEAD *create_face(const char*, const char*, const char *, const char *);
 struct EyeInfo;
 
 EyeInfo initEyeInfo(float x, float y, float z, int yaw, int pitch, int roll, float size, float radius);
-void drawEyeSystem(float sysX, float sysY, float sysZ, int sysPitch, int sysYaw, int sysRoll, EyeInfo eye1Info, EyeInfo eye2Info);
+void drawEyeSystem(float sysX, float sysY, float sysZ, int sysPitch, int sysYaw, int sysRoll, EyeInfo& eye1Info, EyeInfo& eye2Info, bool shouldBlink);
 void drawEye(float x, float y, float z, float radius, float yaw, float pitch, float roll);
 
 EyeInfo eye1Info, eye2Info;
 int eyeYaw, eyePitch, eyeRoll;
 float eyeX, eyeY, eyeZ;
 float lookAtX, lookAtY, lookAtZ;
+int expressionAnimationTime = 500000, rotationAnimationTime = 500000, blinkAnimationTime = 100000;
 
 GLfloat rotateX, rotateY;
 
 HEAD *face;
+
+float max(float a, float b){
+	return (a > b ? a : b);
+}
 
 // ======================================================================== 
 // Key bindings for callback proceedures
@@ -140,6 +145,10 @@ static void Key_q() {
 
 static void Key_l() {
 	face->lookingAround = !face->lookingAround;
+}
+
+static void Key_p() {
+	face->shouldBlink = !face->shouldBlink;
 }
 
 static void Key_up(void) {
@@ -265,27 +274,20 @@ void facePoint(glm::vec3 position) {
 	rotateY = angles.y;
 }
 
-/**
- *
- * @param dt Time passed in microseconds since last call
- * @param animationTime Total time of animation in seconds
- */
-void transitionRotation(int dt, float animationTime) {
-	float animationTimeMicro = animationTime * 1000000;
+void transitionRotation(int dt, int animationTime) {
 	bool finishedAnimation = false;
 	face->rotationTransitionCounter += dt;
-	if (face->rotationTransitionCounter > animationTimeMicro) {
-		face->rotationTransitionCounter = animationTimeMicro;
+	if (face->rotationTransitionCounter > animationTime) {
+		face->rotationTransitionCounter = animationTime;
 		finishedAnimation = true;
 	}
 	float fracHeadStart = 1 / 4.f; //Fraction through animation time to start rotating
-	float headStart = face->rotationTransitionCounter / animationTimeMicro;
-	float headFracTimePassed = (face->rotationTransitionCounter - fracHeadStart * animationTimeMicro) * (1 / (1 - fracHeadStart)) / animationTimeMicro;
+	float headFracTimePassed = (face->rotationTransitionCounter - fracHeadStart * animationTime) * (1 / (1 - fracHeadStart)) / (float) animationTime;
 	headFracTimePassed = (headFracTimePassed < 0 ? 0 : headFracTimePassed);
-	float eyeFracTimePassed = face->rotationTransitionCounter * (1 / (1 - fracHeadStart)) / animationTimeMicro;
+	float eyeFracTimePassed = face->rotationTransitionCounter * (1 / (1 - fracHeadStart)) / (float) animationTime;
 	eyeFracTimePassed = (eyeFracTimePassed > 1 ? 1 : eyeFracTimePassed);
 
-	if (!face->transitioningExpression && headStart > .75) {
+	if (!face->transitioningExpression && eyeFracTimePassed == 1) {
 		face->transitioningExpression = true;
 		face->currentExpression = face->nextExpression;
 		face->nextExpression = rand() % face->nexpressions;
@@ -302,8 +304,6 @@ void transitionRotation(int dt, float animationTime) {
 	glm::vec2 endEye1Angles = getAnglesToLookAtPoint(face->endPosition, eye1Info);
 	eye1Info.pitch = startEye1Angles.x + eyeFracTimePassed * (endEye1Angles.x - startEye1Angles.x);
 	eye1Info.yaw = startEye1Angles.y + eyeFracTimePassed * (endEye1Angles.y - startEye1Angles.y);
-
-	std::cout << eyeFracTimePassed << '\n';
 
 	//Rotate Eye2
 	glm::vec2 startEye2Angles = getAnglesToLookAtPoint(face->startPosition, eye2Info);
@@ -384,6 +384,8 @@ void input(sf::Event event) {
 			Key_q();
 		} else if (event.key.code == sf::Keyboard::L) {
 			Key_l();
+		} else if (event.key.code == sf::Keyboard::P) {
+			Key_p();
 		}
 	} else if (event.type == sf::Event::Resized) {
 		ResizeWindow(event.size.width, event.size.height);
@@ -395,19 +397,19 @@ void updateFace(int dt) {
 	if (face->transitioningExpression) {
 		bool finishedAnimation = false;
 		face->expressionTransitionCounter += dt;
-		if (face->expressionTransitionCounter > 1000000) {
-			face->expressionTransitionCounter = 1000000;
+		if (face->expressionTransitionCounter > expressionAnimationTime) {
+			face->expressionTransitionCounter = expressionAnimationTime;
 			finishedAnimation = true;
 		}
 		face_reset(face);
-		transitionExpression(face, face->currentExpression, face->nextExpression, face->expressionTransitionCounter, 1000000);
+		transitionExpression(face, face->currentExpression, face->nextExpression, face->expressionTransitionCounter, expressionAnimationTime);
 		if (finishedAnimation) {
 			face->transitioningExpression = false;
 			face->expressionTransitionCounter = 0;
 		}
 	}
 	if (face->transitioningRotation) {
-		transitionRotation(dt, 0.5);
+		transitionRotation(dt, rotationAnimationTime);
 	} else if (face->lookingAround) {
 		face->rotationTransitionCounter += dt;
 		if (face->rotationTransitionCounter > 2000000) {
@@ -418,6 +420,12 @@ void updateFace(int dt) {
 			face->transitioningRotation = true;
 		}
 	}
+
+	eye1Info.eyelidCounter += dt;
+	eye1Info.eyelidCounter = (eye1Info.eyelidCounter > 20000000 ? 20000000 : eye1Info.eyelidCounter);
+	eye2Info.eyelidCounter += dt;
+	eye2Info.eyelidCounter = (eye2Info.eyelidCounter > 20000000 ? 20000000 : eye2Info.eyelidCounter);
+
 	static bool calc = true;
 	static int counter = 0;
 	counter += 1;
@@ -478,7 +486,7 @@ static void Animate(void)
 	//NEW BLOCK
 	glDisable(GL_LIGHTING);
 
-	drawEyeSystem(eyeX, eyeY, eyeZ, eyePitch, eyeYaw, eyeRoll, eye1Info, eye2Info);
+	drawEyeSystem(eyeX, eyeY, eyeZ, eyePitch, eyeYaw, eyeRoll, eye1Info, eye2Info, face->shouldBlink);
 
 //COLOR FACE
 	glEnable(GL_LIGHTING);

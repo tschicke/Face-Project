@@ -59,6 +59,7 @@ typedef struct HEAD {
     
 	bool mouthOpen;
 	bool lookingAround;
+	bool shouldBlink;
 
 	bool transitioningRotation;
 	int rotationTransitionCounter;
@@ -109,6 +110,10 @@ struct EyeInfo{
     int pitch, yaw, roll;
     float size;
     float radius;
+
+    bool blinking;
+    int timeToNextBlink;
+    int eyelidCounter;
 };
 
 #endif
