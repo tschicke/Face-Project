@@ -33,6 +33,8 @@
 #include <glm/glm.hpp>
 #include <glm/gtx/transform.hpp>
 
+#include "src/Camera.h"
+
 #include <cmath>
 
 //#include "src/MainWindow.h"
@@ -69,9 +71,11 @@ int expressionAnimationTime = 500000, rotationAnimationTime = 500000, blinkAnima
 
 GLfloat rotateX, rotateY;
 
+Camera camera;
+
 HEAD *face;
 
-float max(float a, float b){
+float max(float a, float b) {
 	return (a > b ? a : b);
 }
 
@@ -386,6 +390,31 @@ void input(sf::Event event) {
 			Key_l();
 		} else if (event.key.code == sf::Keyboard::P) {
 			Key_p();
+		} else if (event.key.code == sf::Keyboard::Numpad2) {
+			std::cout << "Enter botton distance from center\n";
+			int bottom;
+			std::cin >> bottom;
+			camera.calibrateBottomTop(true, bottom);
+		} else if (event.key.code == sf::Keyboard::Numpad4) {
+			std::cout << "Enter left distance from center\n";
+			int left;
+			std::cin >> left;
+			camera.calibrateSides(true, left);
+		} else if (event.key.code == sf::Keyboard::Numpad5) {
+			std::cout << "Enter depth distance from center\n";
+			int depth;
+			std::cin >> depth;
+			camera.calibrateDepth(depth);
+		} else if (event.key.code == sf::Keyboard::Numpad6) {
+			std::cout << "Enter right distance from center\n";
+			int right;
+			std::cin >> right;
+			camera.calibrateSides(false, right);
+		} else if (event.key.code == sf::Keyboard::Numpad8) {
+			std::cout << "Enter top distance from center\n";
+			int top;
+			std::cin >> top;
+			camera.calibrateBottomTop(false, top);
 		}
 	} else if (event.type == sf::Event::Resized) {
 		ResizeWindow(event.size.width, event.size.height);
@@ -421,10 +450,16 @@ void updateFace(int dt) {
 		}
 	}
 
-	eye1Info.eyelidCounter += dt;
-	eye1Info.eyelidCounter = (eye1Info.eyelidCounter > 20000000 ? 20000000 : eye1Info.eyelidCounter);
-	eye2Info.eyelidCounter += dt;
-	eye2Info.eyelidCounter = (eye2Info.eyelidCounter > 20000000 ? 20000000 : eye2Info.eyelidCounter);
+	if (face->shouldBlink || eye1Info.blinking || eye2Info.blinking) {
+		eye1Info.eyelidCounter += dt;
+		eye2Info.eyelidCounter += dt;
+	}
+
+	if (camera.calibrated()) {
+		Circle circle = camera.getFrameCircle();
+		glm::vec3 position = camera.getObjectPosition(circle);
+		lookAtPoint(position);
+	}
 
 	static bool calc = true;
 	static int counter = 0;
@@ -564,6 +599,13 @@ int main(int argc, char** argv)
 	window.create(sf::VideoMode(1024, 1024, 32), "Face", 7U, settings);
 	window.setFramerateLimit(60);
 	window.setPosition(sf::Vector2i(50, 190)); //Temp
+
+	camera.openStream(2);
+	camera.calibrateBottomTop(true, -20);
+	camera.calibrateBottomTop(false,20);
+	camera.calibrateSides(true, -20);
+	camera.calibrateSides(false, 20);
+	camera.calibrateDepth(20);
 
 	// Initialize OpenGL
 	OpenGLInit();

@@ -4,85 +4,185 @@
 // *  Created on: Apr 14, 2014
 // *      Author: tchicke
 // */
-//
-//#include "Camera.h"
-//
-//Camera::Camera() {
-//	camNumber = 0;
-//	baseDistance = 0;
-//	baseRadius = 0;
-//	bottomEdge = 0;
-//	leftEdge = 0;
-//	rightEdge = 0;
-//	topEdge = 0;
+
+#include "Camera.h"
+
+#include <opencv2/opencv.hpp>
+#include <opencv2/imgproc/imgproc.hpp>
+
+#include <vector>
+
+Camera::Camera() {
+	camNumber = 0;
+	baseDistance = 0;
+	baseRadius = 0;
+	bottomEdge = 0;
+	leftEdge = 0;
+	rightEdge = 0;
+	topEdge = 0;
+	Circle circle;
+	circle.radius = 120;
+	pastCircles[0] = circle;
+	cv::namedWindow("Camera", CV_WINDOW_AUTOSIZE);
+}
+
+Camera::Camera(int camNumber) {
+	this->camNumber = camNumber;
+	openStream(camNumber);
+}
+
+void Camera::openStream(int camNumber) {
+	capture.open(camNumber);
+}
+
+cv::Mat Camera::getCameraFrame() {
+	cv::Mat frame;
+	capture >> frame;
+	return frame;
+}
+
+void Camera::calibrateDepth(float baseDistance) {
+	Circle circle = getFrameCircle();
+	this->baseDistance = baseDistance;
+	this->baseRadius = circle.radius;
+	std::cout << "Camera Base Radius " << baseRadius << '\n';
+}
+
+void Camera::calibrateSides(bool left, float xDistance) {
+	if (left) {
+		leftEdge = xDistance;
+	} else {
+		rightEdge = xDistance;
+	}
+}
+
+void Camera::calibrateBottomTop(bool bottom, float yDistance) {
+	if (bottom) {
+		bottomEdge = yDistance;
+	} else {
+		topEdge = yDistance;
+	}
+}
+
+bool Camera::calibrated() {
+	return leftEdge && rightEdge && topEdge && bottomEdge && baseDistance;
+}
+
+Circle Camera::getFrameCircle() {
+	cv::Mat frame = getCameraFrame();
+	cv::cvtColor(frame, frame, CV_BGR2HSV);
+
+	std::vector<cv::Mat> channels;
+	for (cv::MatIterator_<cv::Vec3b> it = frame.begin<cv::Vec3b>(), end = frame.end<cv::Vec3b>(); it != end; ++it) {
+		int hue = (*it)[0];
+		int saturation = (*it)[1];
+		int value = (*it)[2];
+
+		bool black = false;
+
+		if (hue > 10 && hue < 170) {
+			(*it)[2] = 0;
+			black = true;
+		}
+		if (!black && (saturation < 130 || saturation > 210)) {
+			(*it)[2] = 0;
+			black = true;
+		}
+		if (!black && (value < 60 || value > 140)) {
+			(*it)[2] = 0;
+			black = true;
+		}
+
+		if (!black) {
+			(*it)[1] = 0;
+			(*it)[2] = 255;
+		}
+	}
+
+	cv::cvtColor(frame, frame, CV_HSV2BGR);
+	cv::cvtColor(frame, frame, CV_BGR2GRAY);
+
+	cv::resize(frame, frame, cv::Size(), 1.8f / 1.5f, 1, cv::INTER_NEAREST);
+
+	cv::GaussianBlur(frame, frame, cv::Size(9, 9), 2, 2);
+
+	std::vector<cv::Vec3f> circles;
+
+	cv::HoughCircles(frame, circles, CV_HOUGH_GRADIENT, 1, frame.rows / 8, 300, 20, 0, 0);
+
+	for (int i = 0; i < circles.size(); ++i) {
+		cv::Point center(cvRound(circles[i][0]), cvRound(circles[i][1]));
+		int radius = cvRound(circles[i][2]);
+
+		cv::circle(frame, center, 3, cv::Scalar(0, 255, 0), -1, 8, 0);
+		cv::circle(frame, center, radius, cv::Scalar(0, 255, 0), 3, 8, 0);
+	}
+
+	cv::imshow("Camera", frame);
+
+	Circle returnCircle;
+
+	if (circles.size() == 0) {
+		return pastCircles[0]; //TODO extrapolate;
+	} else if (circles.size() == 1) {
+		cv::Vec3f circle = circles[0];
+		returnCircle.positionScreenSpace.x = circle[0];
+		returnCircle.positionScreenSpace.y = circle[1];
+		returnCircle.radius = circle[2];
+		for (int i = 0; i < 4; ++i) {
+			pastCircles[4 - i] = pastCircles[3 - i];
+		}
+		pastCircles[0] = returnCircle;
+		return returnCircle;
+	}
+
+	cv::Vec3f correctCircle = circles[0];
+	for (int i = 1; i < circles.size(); ++i) {
+		if (circles[i][2] > correctCircle[2]) {
+			correctCircle[0] = circles[i][0];
+			correctCircle[1] = circles[i][1];
+			correctCircle[2] = circles[i][2];
+		}
+	}
+
+	returnCircle.positionScreenSpace.x = correctCircle[0];
+	returnCircle.positionScreenSpace.y = correctCircle[1];
+	returnCircle.radius = correctCircle[2];
+	for (int i = 0; i < 4; ++i) {
+		pastCircles[4 - i] = pastCircles[3 - i];
+	}
+	pastCircles[0] = returnCircle;
+	std::cout << "Radius " << returnCircle.radius << '\n';
+	return returnCircle;
+
+}
+
+glm::vec3 Camera::getObjectPosition(Circle circle) {
+	float x;
+	float y;
+	float z;
+
+	z = baseRadius * baseDistance / circle.radius;
+	x = (circle.positionScreenSpace.x * z * rightEdge) / (baseDistance * 500);
+	y = (circle.positionScreenSpace.y * z * topEdge) / (baseDistance * 500);
+
+	return glm::vec3(x, y, z);
+}
+//Calibrator::Calibrator(std::string path, float sideLength, int width, int height) {
+//	this->path = path;
+//	this->sideLength = sideLength;
+//	this->width = width;
+//	this->height = height;
 //}
 //
-//Camera::Camera(int camNumber) {
-//	this->camNumber = camNumber;
-//	openStream(camNumber);
+//void Calibrator::calibrate() {
 //}
 //
-//void Camera::openStream(int camNumber) {
-//	capture.open(camNumber);
+//cv::Mat Calibrator::getCameraMatrix() {
 //}
 //
-//cv::Mat Camera::getCameraFrame() {
-//	cv::Mat frame;
-//	capture >> frame;
-//	return frame;
+//cv::Mat Calibrator::getDisortionCoefficients() {
 //}
 //
-//void Camera::calibrateDepth(float baseDistance) {
-//	Circle circle = getFrameCircle();
-//	this->baseDistance = baseDistance;
-//	this->baseRadius = circle.radius;
+//void Calibrator::calcImagePoints() {
 //}
-//
-//void Camera::calibrateSides(bool left, float xDistance) {
-//	if (left) {
-//		leftEdge = xDistance;
-//	} else {
-//		rightEdge = xDistance;
-//	}
-//}
-//
-//void Camera::calibrateBottomTop(bool bottom, float yDistance) {
-//	if (bottom) {
-//		bottomEdge = yDistance;
-//	} else {
-//		topEdge = yDistance;
-//	}
-//}
-//
-//Circle Camera::getFrameCircle(){
-//}
-//
-//glm::vec3 Camera::getObjectPosition(Circle circle){
-//	float x;
-//	float y;
-//	float z;
-//
-//	z = baseRadius * baseDistance / circle.radius;
-//	x = (circle.positionScreenSpace.x * z * rightEdge) / (baseDistance * 500);
-//	y = (circle.positionScreenSpace.y * z * topEdge) / (baseDistance * 500);
-//
-//	return glm::vec3(x, y, z);
-//}
-////Calibrator::Calibrator(std::string path, float sideLength, int width, int height) {
-////	this->path = path;
-////	this->sideLength = sideLength;
-////	this->width = width;
-////	this->height = height;
-////}
-////
-////void Calibrator::calibrate() {
-////}
-////
-////cv::Mat Calibrator::getCameraMatrix() {
-////}
-////
-////cv::Mat Calibrator::getDisortionCoefficients() {
-////}
-////
-////void Calibrator::calcImagePoints() {
-////}
