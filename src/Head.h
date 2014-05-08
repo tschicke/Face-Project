@@ -60,6 +60,10 @@ typedef struct HEAD {
 	bool mouthOpen;
 	bool lookingAround;
 	bool shouldBlink;
+	bool drawMuscles;
+	bool drawEyes;
+	bool useCamera;
+	int colorMode;
 
 	bool transitioningRotation;
 	int rotationTransitionCounter;
@@ -96,6 +100,8 @@ typedef struct HEAD {
 
 	int nexpressions;  // number of expressions in the
 	EXPRESSION **expression;  // point to an expression vector
+	int nexpressions2;
+	EXPRESSION ** expression2;
 
 	int rendermode;  // wireframe, flat, smooth or textured
 	int current_muscle;  // the current muscle to be activated

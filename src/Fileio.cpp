@@ -196,7 +196,7 @@ void read_muscles(const char* FileName, HEAD* face)
 
 	for (i = 0; i < nm; i++) {
 
-		m = _new ( MUSCLE );
+		m = _new(MUSCLE);
 
 		int tempLL, tempUL, tempLEL, tempUEL;
 
@@ -268,7 +268,7 @@ void add_muscle_to_face(MUSCLE* m, HEAD* face)
 	if (face->nmuscles == 0)
 		face->muscle = _new_array(MUSCLE *, 50);
 	else if (face->nmuscles % 50 == 0)
-		face->muscle = _resize_array(face->muscle,MUSCLE *,face->nmuscles+50);
+		face->muscle = _resize_array(face->muscle, MUSCLE *, face->nmuscles + 50);
 
 	nn = face->nmuscles;
 	face->muscle[nn] = m;
@@ -283,7 +283,7 @@ void add_muscle_to_face(MUSCLE* m, HEAD* face)
 //
 //   Read in the expression macros.
 //
-void read_expression_macros(const char* FileName, HEAD* face)
+void read_expression_macros(const char* FileName, const char * FileName2, HEAD* face)
 		{
 	FILE *InFile;
 	int i, k, l;
@@ -322,6 +322,44 @@ void read_expression_macros(const char* FileName, HEAD* face)
 	}
 
 	fclose(InFile);
+
+	FILE *InFile2;
+	int i2, k2, l2;
+	EXPRESSION *eopen;
+	static int allocated2 = 0;
+	char tmp2open[30], tmp1open[30];
+
+	//  Check the FileName
+	if ((InFile2 = fopen(FileName2, "r")) == 0) {
+		fprintf(stderr, "can't open input file: %s\n", FileName2);
+		exit(-1);
+	}
+
+	fscanf(InFile2, "%d", &face->nexpressions2);
+	//  fprintf( stderr, "Number of expressions = %d\n", face->nexpressions ) ;
+
+	// Allocate some memory.
+	if (!allocated2)
+		face->expression2 = (EXPRESSION **) malloc(face->nexpressions2 *
+				sizeof(EXPRESSION *));
+
+	for (i = 0; i < face->nexpressions2; i++) {
+		if (allocated2)
+			eopen = face->expression2[i];
+		else
+			eopen = face->expression2[i] = _new(EXPRESSION);
+
+		fscanf(InFile2, "%s\n", &(*eopen->name));
+
+		for (k2 = 0, l2 = 0; k2 < 11; k2++, l2 += 2) {
+
+			fscanf(InFile2, "%s %f %s %f", &(*tmp1open), &eopen->m[l2], &(*tmp2open), &eopen->m[l2 + 1]);
+			//      fprintf (stderr,"%d %d %s %f \t%s %f\n", k,l,tmp1, e->m[l], tmp2, e->m[l+1] ) ;
+		}
+		//    fprintf (stderr, "\n") ;
+	}
+
+	fclose(InFile2);
 
 	allocated = 1;
 }

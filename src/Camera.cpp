@@ -71,6 +71,8 @@ bool Camera::calibrated() {
 
 Circle Camera::getFrameCircle() {
 	cv::Mat frame = getCameraFrame();
+	cv::namedWindow("Image", CV_WINDOW_AUTOSIZE);
+	cv::imshow("Image", frame);
 	cv::cvtColor(frame, frame, CV_BGR2HSV);
 
 	std::vector<cv::Mat> channels;
@@ -81,15 +83,15 @@ Circle Camera::getFrameCircle() {
 
 		bool black = false;
 
-		if (hue > 10 && hue < 170) {
+		if (hue < 50 || hue > 65) {
 			(*it)[2] = 0;
 			black = true;
 		}
-		if (!black && (saturation < 130 || saturation > 210)) {
+		if (!black && (saturation < 50 || saturation > 220)) {
 			(*it)[2] = 0;
 			black = true;
 		}
-		if (!black && (value < 60 || value > 180)) {
+		if (!black && (value < 20 || value > 220)) {
 			(*it)[2] = 0;
 			black = true;
 		}
@@ -103,23 +105,24 @@ Circle Camera::getFrameCircle() {
 	cv::cvtColor(frame, frame, CV_HSV2BGR);
 	cv::cvtColor(frame, frame, CV_BGR2GRAY);
 
-	cv::resize(frame, frame, cv::Size(), 1.8f / 1.5f, 1, cv::INTER_NEAREST);
+	cv::resize(frame, frame, cv::Size(), 1.88f / 1.5f, 1, cv::INTER_NEAREST);
 
 	frameWidth = frame.cols;
 	frameHeight = frame.rows;
 
 	cv::GaussianBlur(frame, frame, cv::Size(9, 9), 2, 2);
+	cv::GaussianBlur(frame, frame, cv::Size(9, 9), 2, 2);
 
 	std::vector<cv::Vec3f> circles;
 
-	cv::HoughCircles(frame, circles, CV_HOUGH_GRADIENT, 1, frame.rows / 8, 300, 20, 0, 0);
+	cv::HoughCircles(frame, circles, CV_HOUGH_GRADIENT, 1, frame.rows / 8, 400, 20, 0, 0);
 
 	for (int i = 0; i < circles.size(); ++i) {
 		cv::Point center(cvRound(circles[i][0]), cvRound(circles[i][1]));
 		int radius = cvRound(circles[i][2]);
 
-		cv::circle(frame, center, 3, cv::Scalar(0, 255, 0), -1, 8, 0);
-		cv::circle(frame, center, radius, cv::Scalar(0, 255, 0), 3, 8, 0);
+		cv::circle(frame, center, 3, cv::Scalar(128, 128, 128), -1, 8, 0);
+		cv::circle(frame, center, radius, cv::Scalar(128, 128, 128), 3, 8, 0);
 	}
 
 	cv::imshow("Camera", frame);
@@ -149,9 +152,14 @@ Circle Camera::getFrameCircle() {
 		}
 	}
 
+	if(abs(correctCircle[0] - (pastCircles[0].positionScreenSpace.x)) < 100 || abs(correctCircle[1] - pastCircles[0].positionScreenSpace.y) < 100 || abs(correctCircle[2] - pastCircles[0].radius) > 30){
+		return pastCircles[0];
+	}
+
 	returnCircle.positionScreenSpace.x = correctCircle[0];
 	returnCircle.positionScreenSpace.y = correctCircle[1];
 	returnCircle.radius = correctCircle[2];
+	std::cout << returnCircle.radius << '\n';
 	for (int i = 0; i < 4; ++i) {
 		pastCircles[4 - i] = pastCircles[3 - i];
 	}
@@ -167,7 +175,7 @@ glm::vec3 Camera::getObjectPosition(Circle circle) {
 	float z;
 
 	z = baseRadius * baseDistance / circle.radius;
-	x = ((circle.positionScreenSpace.x - (frameWidth / 2)) * z * rightEdge) / (baseDistance * 500);
+	x = -((circle.positionScreenSpace.x - (frameWidth / 2)) * z * rightEdge) / (baseDistance * 500);
 	y = (((frameHeight / 2) - circle.positionScreenSpace.y) * z * topEdge) / (baseDistance * 500);
 
 	return glm::vec3(x, y, z);

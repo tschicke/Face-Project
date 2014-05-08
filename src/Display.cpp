@@ -81,10 +81,10 @@ void paint_muscles(HEAD *face)
 		fprintf (stderr, "tail x: %f y: %f z: %f\n\n", v2[0], v2[1], v2[2] );
 #endif
 
-		glBegin(GL_LINE_STRIP);
-		glVertex3f(v1[0], v1[1], v1[2]);
-		glVertex3f(v2[0], v2[1], v2[2]);
-		glEnd();
+			glBegin(GL_LINE_STRIP);
+			glVertex3f(v1[0], v1[1], v1[2]);
+			glVertex3f(v2[0], v2[1], v2[2]);
+			glEnd();
 	}
 	glLineWidth(1.0);
 }
@@ -138,6 +138,7 @@ void paint_polygons(HEAD *face, int type, int normals)
 			}
 			glBegin(GL_LINE_LOOP);
 			{
+				glColor3f(0.5, 0.5, 0.5);
 				glNormal3f(norm1[0], norm1[1], norm1[2]);
 				glVertex3f(v1[0], v1[1], v1[2]);
 				glNormal3f(norm2[0], norm2[1], norm2[2]);
@@ -148,7 +149,6 @@ void paint_polygons(HEAD *face, int type, int normals)
 			glEnd();
 
 		} // end if drawn
-
 
 		else if (type == 1) {
 			for (j = 0; j < 3; j++) {
@@ -167,19 +167,47 @@ void paint_polygons(HEAD *face, int type, int normals)
 		if (type) {
 			//COLOR FACE
 			glEnable(GL_COLOR_MATERIAL);
-			glBegin(GL_TRIANGLES);
-			{
-				glColor3f(color1[0], color1[1], color1[2]);
-				glNormal3f(norm1[0], norm1[1], norm1[2]);
-				glVertex3f(v1[0], v1[1], v1[2]);
-				glColor3f(color2[0], color2[1], color2[2]);
-				glNormal3f(norm2[0], norm2[1], norm2[2]);
-				glVertex3f(v2[0], v2[1], v2[2]);
-				glColor3f(color3[0], color3[1], color3[2]);
-				glNormal3f(norm3[0], norm3[1], norm3[2]);
-				glVertex3f(v3[0], v3[1], v3[2]);
+			if (face->colorMode == 0) {
+				glBegin(GL_TRIANGLES);
+				{
+					glColor3f(0.5, 0.5, 0.5);
+					glNormal3f(norm1[0], norm1[1], norm1[2]);
+					glVertex3f(v1[0], v1[1], v1[2]);
+					glNormal3f(norm2[0], norm2[1], norm2[2]);
+					glVertex3f(v2[0], v2[1], v2[2]);
+					glNormal3f(norm3[0], norm3[1], norm3[2]);
+					glVertex3f(v3[0], v3[1], v3[2]);
+				}
+			} else if (face->colorMode == 1) {
+				glBegin(GL_TRIANGLES);
+				{
+					float red = 229 / 255.f, green = 184 / 255.f, blue = 143 / 255.f;
+					glColor3f(red, green, blue);
+					glNormal3f(norm1[0], norm1[1], norm1[2]);
+					glVertex3f(v1[0], v1[1], v1[2]);
+					glColor3f(red, green, blue);
+					glNormal3f(norm2[0], norm2[1], norm2[2]);
+					glVertex3f(v2[0], v2[1], v2[2]);
+					glColor3f(red, green, blue);
+					glNormal3f(norm3[0], norm3[1], norm3[2]);
+					glVertex3f(v3[0], v3[1], v3[2]);
+				}
+			} else {
+				glBegin(GL_TRIANGLES);
+				{
+					glColor3f(color1[0], color1[1], color1[2]);
+					glNormal3f(norm1[0], norm1[1], norm1[2]);
+					glVertex3f(v1[0], v1[1], v1[2]);
+					glColor3f(color2[0], color2[1], color2[2]);
+					glNormal3f(norm2[0], norm2[1], norm2[2]);
+					glVertex3f(v2[0], v2[1], v2[2]);
+					glColor3f(color3[0], color3[1], color3[2]);
+					glNormal3f(norm3[0], norm3[1], norm3[2]);
+					glVertex3f(v3[0], v3[1], v3[2]);
+				}
+				glEnd();
+
 			}
-			glEnd();
 			glDisable(GL_COLOR_MATERIAL);
 
 		} // end if drawn

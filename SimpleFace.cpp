@@ -50,7 +50,7 @@ void paint_muscles(HEAD*);
 void paint_polygons(HEAD*, int, int);
 void data_struct(HEAD*);
 void read_muscles(const char*, HEAD*);
-void read_expression_macros(const char*, HEAD*);
+void read_expression_macros(const char*, const char *, HEAD*);
 void activate_muscle(HEAD*, int, float);
 void face_reset(HEAD*);
 void make_expression(HEAD*, int);
@@ -68,6 +68,8 @@ int eyeYaw, eyePitch, eyeRoll;
 float eyeX, eyeY, eyeZ;
 float lookAtX, lookAtY, lookAtZ;
 int expressionAnimationTime = 500000, rotationAnimationTime = 500000, blinkAnimationTime = 100000;
+
+float cameraX = 0, cameraY = 0, cameraZ = 0;
 
 GLfloat rotateX, rotateY;
 
@@ -115,7 +117,6 @@ static void Key_c(void)
 static void Key_C(void)
 		{
 	int cm;
-
 
 	cm = face->current_muscle;
 
@@ -174,7 +175,6 @@ static void Key_r(void) {
 }
 static void Key_R(void) {
 	face_reset(face);
-	read_expression_macros("face-data/expression-macros.dat", face);
 	face->current_exp = 0;
 }
 static void Key_T() {
@@ -292,7 +292,7 @@ void transitionRotation(int dt, int animationTime) {
 	float eyeFracTimePassed = face->rotationTransitionCounter * (1 / (1 - fracHeadStart)) / (float) animationTime;
 	eyeFracTimePassed = (eyeFracTimePassed > 1 ? 1 : eyeFracTimePassed);
 
-	if (!face->transitioningExpression && eyeFracTimePassed == 1) {
+	if (!face->transitioningExpression && eyeFracTimePassed == 1 && !face->useCamera) {
 		face->transitioningExpression = true;
 		face->currentExpression = face->nextExpression;
 		face->nextExpression = rand() % face->nexpressions;
@@ -394,12 +394,21 @@ void input(sf::Event event) {
 			Key_T();
 		} else if (event.key.code == sf::Keyboard::M) {
 			face->mouthOpen = !(face->mouthOpen);
+		} else if (event.key.code == sf::Keyboard::Comma) {
+			face->drawMuscles = !face->drawMuscles;
 		} else if (event.key.code == sf::Keyboard::Q) {
 			Key_q();
 		} else if (event.key.code == sf::Keyboard::L) {
 			Key_l();
 		} else if (event.key.code == sf::Keyboard::P) {
 			Key_p();
+		} else if (event.key.code == sf::Keyboard::O) {
+			++face->colorMode;
+			face->colorMode = face->colorMode % 3;
+		} else if (event.key.code == sf::Keyboard::I) {
+			face->drawEyes = !face->drawEyes;
+		} else if (event.key.code == sf::Keyboard::U) {
+			face->useCamera = !face->useCamera;
 		} else if (event.key.code == sf::Keyboard::Numpad2) {
 			std::cout << "Enter botton distance from center\n";
 			int bottom;
@@ -450,25 +459,30 @@ void updateFace(int dt) {
 	if (face->transitioningRotation) {
 		transitionRotation(dt, rotationAnimationTime);
 	} else if (face->lookingAround) {
-		face->rotationTransitionCounter += dt;
-		if (face->rotationTransitionCounter > 2000000) {
-			face->endPosition.x = (((rand() / (float) RAND_MAX) * 2) - 1) * 7;
-			face->endPosition.y = (((rand() / (float) RAND_MAX) * 2) - 1) * 7;
-			face->endPosition.z = 20;
-			face->rotationTransitionCounter = 0;
-			face->transitioningRotation = true;
+		if (!face->useCamera) {
+			face->rotationTransitionCounter += dt;
+			if (face->rotationTransitionCounter > 2000000) {
+				face->endPosition.x = (((rand() / (float) RAND_MAX) * 2) - 1) * 7;
+				face->endPosition.y = (((rand() / (float) RAND_MAX) * 2) - 1) * 7;
+				face->endPosition.z = 20;
+				face->rotationTransitionCounter = 0;
+				face->transitioningRotation = true;
+			}
 		}
+	}
+
+	if (face->useCamera && face->lookingAround) {
+		face->rotationTransitionCounter += dt;
+		Circle circle = camera.getFrameCircle();
+		glm::vec3 position = camera.getObjectPosition(circle);
+		position += glm::vec3(cameraX, cameraY, cameraZ);
+		face->endPosition = position;
+		face->transitioningRotation = true;
 	}
 
 	if (face->shouldBlink || eye1Info.blinking || eye2Info.blinking) {
 		eye1Info.eyelidCounter += dt;
 		eye2Info.eyelidCounter += dt;
-	}
-
-	if (camera.calibrated()) {
-		Circle circle = camera.getFrameCircle();
-		glm::vec3 position = camera.getObjectPosition(circle);
-		lookAtPoint(position);
 	}
 
 	static bool calc = true;
@@ -531,7 +545,9 @@ static void Animate(void)
 	//NEW BLOCK
 	glDisable(GL_LIGHTING);
 
-	drawEyeSystem(eyeX, eyeY, eyeZ, eyePitch, eyeYaw, eyeRoll, eye1Info, eye2Info, face->shouldBlink);
+	if (face->drawEyes) {
+		drawEyeSystem(eyeX, eyeY, eyeZ, eyePitch, eyeYaw, eyeRoll, eye1Info, eye2Info, face->shouldBlink);
+	}
 
 //COLOR FACE
 	glEnable(GL_LIGHTING);
@@ -559,7 +575,9 @@ static void Animate(void)
 //	if ( face->rendermode == 0 || 
 //		 face->rendermode == 3 ) {
 	glDisable(GL_LIGHTING);
-//	paint_muscles(face);
+	if (face->drawMuscles) {
+		paint_muscles(face);
+	}
 //	}
 
 	// Now flush the pipeline and
@@ -582,7 +600,7 @@ void OpenGLInit(void)
 	glEnable(GL_DEPTH_TEST);
 	glDepthFunc(GL_LESS);
 	glCullFace(GL_FRONT_AND_BACK);
-	glClearColor(.9, .9, .9, 1);
+	glClearColor(.1, .3, .5, 1);
 
 //	GLfloat specular[] = { 0.3f, 0.3f, 0.3f, 1.0f };
 //	GLfloat shininess[] = { 1.f };
@@ -610,12 +628,12 @@ int main(int argc, char** argv)
 	window.setFramerateLimit(60);
 	window.setPosition(sf::Vector2i(50, 190)); //Temp
 
-//	camera.openStream(2);
-//	camera.calibrateBottomTop(true, -20);
-//	camera.calibrateBottomTop(false,20);
-//	camera.calibrateSides(true, -20);
-//	camera.calibrateSides(false, 20);
-//	camera.calibrateDepth(20);
+	camera.openStream(0);
+	camera.calibrateBottomTop(true, -15);
+	camera.calibrateBottomTop(false, 15);
+	camera.calibrateSides(true, -15);
+	camera.calibrateSides(false, 15);
+	camera.calibrateDepth(15);
 
 	// Initialize OpenGL
 	OpenGLInit();
@@ -667,7 +685,7 @@ void FaceInit(void)
 		{
 	face = create_face("face-data/index.dat", "face-data/faceline.dat", "face-data/face_colors.dat", "face-data/VertexZones.dat");
 	read_muscles("face-data/muscle.dat", face);
-	read_expression_macros("face-data/expression-macros.dat", face);
+	read_expression_macros("face-data/expression-macros.dat", "face-data/expression-macros-mouth-open.dat", face);
 	data_struct(face);
 
 	eye1Info = initEyeInfo(-2.026, 0, 0, 0, 0, 0, 0, 1.1);

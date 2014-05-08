@@ -85,11 +85,16 @@ void face_reset(HEAD *face) {
 HEAD *create_face(const char *f1, const char *f2, const char * f3, const char * f4) {
 	HEAD *h;
 
-	h = _new ( HEAD );
+	h = _new(HEAD);
 
 	h->mouthOpen = false;
 	h->lookingAround = false;
 	h->shouldBlink = false;
+	h->drawMuscles = true;
+	h->drawEyes = false;
+	h->useCamera = false;
+	h->colorMode = 0;
+	h->startPosition = glm::vec3(0, 2.9, 30);
 
 	h->transitioningRotation = false;
 	h->rotationTransitionCounter = 0;
@@ -106,8 +111,7 @@ HEAD *create_face(const char *f1, const char *f2, const char * f3, const char * 
 	h->nmuscles = 0;
 	h->current_muscle = 0;
 	h->current_exp = 0;
-	//h->rendermode = 0;
-	h->rendermode = 1; //TODO Change back to 0
+	h->rendermode = 0;
 
 	read_polygon_indices(f1, h);
 	read_polygon_line(f2, h);
@@ -144,9 +148,9 @@ void make_face(HEAD *face) {
 
 		if (p1 == 999) {
 
-			p = _new ( POLYGON );
+			p = _new(POLYGON);
 			for (j = 0; j < 3; j++) {
-				p->vertex[j] = _new ( VERTEX );
+				p->vertex[j] = _new(VERTEX);
 				p->vertex[j]->np = 0;
 				p->vertex[j]->isLL = face->tagList[parray[j + 1] * 4];
 				p->vertex[j]->isUL = face->tagList[parray[j + 1] * 4 + 1];
@@ -172,9 +176,9 @@ void make_face(HEAD *face) {
 			add_polygon_to_face(p, face);
 			reflect_polygon(p, face);
 		} else {
-			p = _new ( POLYGON );
+			p = _new(POLYGON);
 			for (j = 0; j < 3; j++) {
-				p->vertex[j] = _new ( VERTEX );
+				p->vertex[j] = _new(VERTEX);
 				p->vertex[j]->np = 0;
 				p->vertex[j]->isLL = face->tagList[parray[j] * 4];
 				p->vertex[j]->isUL = face->tagList[parray[j] * 4 + 1];
@@ -192,10 +196,10 @@ void make_face(HEAD *face) {
 			add_polygon_to_face(p, face);
 			reflect_polygon(p, face);
 
-			p = _new ( POLYGON );
+			p = _new(POLYGON);
 			for (j = 0; j < 3; j++) {
 				int poly = (j == 0 ? p1 : (j == 1 ? p3 : p4));
-				p->vertex[j] = _new ( VERTEX );
+				p->vertex[j] = _new(VERTEX);
 				p->vertex[j]->np = 0;
 				p->vertex[j]->isLL = face->tagList[poly * 4];
 				p->vertex[j]->isUL = face->tagList[poly * 4 + 1];
@@ -238,7 +242,7 @@ void add_polygon_to_face(POLYGON *p, HEAD *face) {
 	if (face->npolygons == 0)
 		face->polygon = _new_array(POLYGON *, 500);
 	else if (face->npolygons % 500 == 0)
-		face->polygon = _resize_array(face->polygon,POLYGON *,face->npolygons+500);
+		face->polygon = _resize_array(face->polygon, POLYGON *, face->npolygons + 500);
 
 	nn = face->npolygons;
 	face->polygon[nn] = p;
@@ -261,10 +265,10 @@ void reflect_polygon(POLYGON *poly, HEAD *face) {
 	int i, j;
 
 	// Allocate memory for the new polygon.
-	newp = _new ( POLYGON );
+	newp = _new(POLYGON);
 	for (j = 0; j < 3; j++) {
 		int index = (j == 0 ? 1 : (j == 1 ? 0 : 2));
-		newp->vertex[j] = _new ( VERTEX );
+		newp->vertex[j] = _new(VERTEX);
 		newp->vertex[j]->np = 0;
 		newp->vertex[j]->isLL = poly->vertex[index]->isLL;
 		newp->vertex[j]->isUL = poly->vertex[index]->isUL;
@@ -527,7 +531,11 @@ void make_expression(HEAD *face, int e) {
 
 	for (m = 0; m < face->nmuscles; m++) {
 		float muscle_contraction;
-		muscle_contraction = face->expression[e]->m[m];
+		if (face->mouthOpen) {
+			muscle_contraction = face->expression2[e]->m[m];
+		} else {
+			muscle_contraction = face->expression[e]->m[m];
+		}
 
 		activate_muscle(face, m, muscle_contraction);
 
@@ -551,7 +559,12 @@ void transitionExpression(HEAD *face, int e1, int e2, int timePassed, int totalT
 //        float muscleContraction = ((face->expression[e2]->m[m] - face->expression[e1]->m[m]) * fraction) + face->expression[e1]->m[m];//Linear
 
 		float cosFrac = (cos(fraction * 3.14159265358979f) + 1) / 2;
-		float muscleContraction = (face->expression[e1]->m[m] * cosFrac) + (face->expression[e2]->m[m] * (1 - cosFrac)); //Cosine
+		float muscleContraction = 0;
+		if (face->mouthOpen) {
+			muscleContraction = (face->expression2[e1]->m[m] * cosFrac) + (face->expression2[e2]->m[m] * (1 - cosFrac)); //Cosine
+		} else {
+			muscleContraction = (face->expression[e1]->m[m] * cosFrac) + (face->expression[e2]->m[m] * (1 - cosFrac)); //Cosine
+		}
 
 		activate_muscle(face, m, muscleContraction);
 	}
