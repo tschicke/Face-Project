@@ -33,6 +33,8 @@
 #include <glm/glm.hpp>
 #include <glm/gtx/transform.hpp>
 
+#include "src/Camera.h"
+
 #include <cmath>
 
 //#include "src/MainWindow.h"
@@ -58,17 +60,24 @@ HEAD *create_face(const char*, const char*, const char *, const char *);
 struct EyeInfo;
 
 EyeInfo initEyeInfo(float x, float y, float z, int yaw, int pitch, int roll, float size, float radius);
-void drawEyeSystem(float sysX, float sysY, float sysZ, int sysPitch, int sysYaw, int sysRoll, EyeInfo eye1Info, EyeInfo eye2Info);
+void drawEyeSystem(float sysX, float sysY, float sysZ, int sysPitch, int sysYaw, int sysRoll, EyeInfo& eye1Info, EyeInfo& eye2Info, bool shouldBlink);
 void drawEye(float x, float y, float z, float radius, float yaw, float pitch, float roll);
 
 EyeInfo eye1Info, eye2Info;
 int eyeYaw, eyePitch, eyeRoll;
 float eyeX, eyeY, eyeZ;
 float lookAtX, lookAtY, lookAtZ;
+int expressionAnimationTime = 500000, rotationAnimationTime = 500000, blinkAnimationTime = 100000;
 
 GLfloat rotateX, rotateY;
 
+Camera camera;
+
 HEAD *face;
+
+float max(float a, float b) {
+	return (a > b ? a : b);
+}
 
 // ======================================================================== 
 // Key bindings for callback proceedures
@@ -107,6 +116,7 @@ static void Key_C(void)
 		{
 	int cm;
 
+
 	cm = face->current_muscle;
 
 	// Record the muscle activation 
@@ -140,6 +150,10 @@ static void Key_q() {
 
 static void Key_l() {
 	face->lookingAround = !face->lookingAround;
+}
+
+static void Key_p() {
+	face->shouldBlink = !face->shouldBlink;
 }
 
 static void Key_up(void) {
@@ -252,7 +266,7 @@ glm::vec2 getAnglesToFacePoint(glm::vec3 position) {
 
 	float yaw = atan2(position.x - eyeSysPos.x, position.z) * 180 / pi;
 
-	glm::vec4 rotatedPosition = glm::rotate(-(float) yaw, 0.f, 1.f, 0.f) * glm::vec4(position, 1);
+	glm::vec4 rotatedPosition = glm::rotate(-(float) yaw, glm::vec3(0, 1, 0)) * glm::vec4(position, 1);
 
 	float pitch = atan2(-(rotatedPosition.y - eyeSysPos.y), rotatedPosition.z) * 180 / pi;
 
@@ -265,27 +279,20 @@ void facePoint(glm::vec3 position) {
 	rotateY = angles.y;
 }
 
-/**
- *
- * @param dt Time passed in microseconds since last call
- * @param animationTime Total time of animation in seconds
- */
-void transitionRotation(int dt, float animationTime) {
-	float animationTimeMicro = animationTime * 1000000;
+void transitionRotation(int dt, int animationTime) {
 	bool finishedAnimation = false;
 	face->rotationTransitionCounter += dt;
-	if (face->rotationTransitionCounter > animationTimeMicro) {
-		face->rotationTransitionCounter = animationTimeMicro;
+	if (face->rotationTransitionCounter > animationTime) {
+		face->rotationTransitionCounter = animationTime;
 		finishedAnimation = true;
 	}
 	float fracHeadStart = 1 / 4.f; //Fraction through animation time to start rotating
-	float headStart = face->rotationTransitionCounter / animationTimeMicro;
-	float headFracTimePassed = (face->rotationTransitionCounter - fracHeadStart * animationTimeMicro) * (1 / (1 - fracHeadStart)) / animationTimeMicro;
+	float headFracTimePassed = (face->rotationTransitionCounter - fracHeadStart * animationTime) * (1 / (1 - fracHeadStart)) / (float) animationTime;
 	headFracTimePassed = (headFracTimePassed < 0 ? 0 : headFracTimePassed);
-	float eyeFracTimePassed = face->rotationTransitionCounter * (1 / (1 - fracHeadStart)) / animationTimeMicro;
+	float eyeFracTimePassed = face->rotationTransitionCounter * (1 / (1 - fracHeadStart)) / (float) animationTime;
 	eyeFracTimePassed = (eyeFracTimePassed > 1 ? 1 : eyeFracTimePassed);
 
-	if (!face->transitioningExpression && headStart > .75) {
+	if (!face->transitioningExpression && eyeFracTimePassed == 1) {
 		face->transitioningExpression = true;
 		face->currentExpression = face->nextExpression;
 		face->nextExpression = rand() % face->nexpressions;
@@ -303,11 +310,18 @@ void transitionRotation(int dt, float animationTime) {
 	eye1Info.pitch = startEye1Angles.x + eyeFracTimePassed * (endEye1Angles.x - startEye1Angles.x);
 	eye1Info.yaw = startEye1Angles.y + eyeFracTimePassed * (endEye1Angles.y - startEye1Angles.y);
 
-	std::cout << eyeFracTimePassed << '\n';
-
 	//Rotate Eye2
 	glm::vec2 startEye2Angles = getAnglesToLookAtPoint(face->startPosition, eye2Info);
 	glm::vec2 endEye2Angles = getAnglesToLookAtPoint(face->endPosition, eye2Info);
+	eye2Info.pitch = startEye2Angles.x + eyeFracTimePassed * (endEye2Angles.x - startEye2Angles.x);
+	eye2Info.yaw = startEye2Angles.y + eyeFracTimePassed * (endEye2Angles.y - startEye2Angles.y);
+	eye1Info.yaw = startEye1Angles.y + eyeFracTimePassed * (endEye1Angles.y - startEye1Angles.y);
+
+	if (finishedAnimation) {
+		face->transitioningRotation = false;
+		face->rotationTransitionCounter = 0;
+		face->startPosition = face->endPosition;
+	}
 	eye2Info.pitch = startEye2Angles.x + eyeFracTimePassed * (endEye2Angles.x - startEye2Angles.x);
 	eye2Info.yaw = startEye2Angles.y + eyeFracTimePassed * (endEye2Angles.y - startEye2Angles.y);
 
@@ -384,6 +398,33 @@ void input(sf::Event event) {
 			Key_q();
 		} else if (event.key.code == sf::Keyboard::L) {
 			Key_l();
+		} else if (event.key.code == sf::Keyboard::P) {
+			Key_p();
+		} else if (event.key.code == sf::Keyboard::Numpad2) {
+			std::cout << "Enter botton distance from center\n";
+			int bottom;
+			std::cin >> bottom;
+			camera.calibrateBottomTop(true, bottom);
+		} else if (event.key.code == sf::Keyboard::Numpad4) {
+			std::cout << "Enter left distance from center\n";
+			int left;
+			std::cin >> left;
+			camera.calibrateSides(true, left);
+		} else if (event.key.code == sf::Keyboard::Numpad5) {
+			std::cout << "Enter depth distance from center\n";
+			int depth;
+			std::cin >> depth;
+			camera.calibrateDepth(depth);
+		} else if (event.key.code == sf::Keyboard::Numpad6) {
+			std::cout << "Enter right distance from center\n";
+			int right;
+			std::cin >> right;
+			camera.calibrateSides(false, right);
+		} else if (event.key.code == sf::Keyboard::Numpad8) {
+			std::cout << "Enter top distance from center\n";
+			int top;
+			std::cin >> top;
+			camera.calibrateBottomTop(false, top);
 		}
 	} else if (event.type == sf::Event::Resized) {
 		ResizeWindow(event.size.width, event.size.height);
@@ -395,19 +436,19 @@ void updateFace(int dt) {
 	if (face->transitioningExpression) {
 		bool finishedAnimation = false;
 		face->expressionTransitionCounter += dt;
-		if (face->expressionTransitionCounter > 1000000) {
-			face->expressionTransitionCounter = 1000000;
+		if (face->expressionTransitionCounter > expressionAnimationTime) {
+			face->expressionTransitionCounter = expressionAnimationTime;
 			finishedAnimation = true;
 		}
 		face_reset(face);
-		transitionExpression(face, face->currentExpression, face->nextExpression, face->expressionTransitionCounter, 1000000);
+		transitionExpression(face, face->currentExpression, face->nextExpression, face->expressionTransitionCounter, expressionAnimationTime);
 		if (finishedAnimation) {
 			face->transitioningExpression = false;
 			face->expressionTransitionCounter = 0;
 		}
 	}
 	if (face->transitioningRotation) {
-		transitionRotation(dt, 0.5);
+		transitionRotation(dt, rotationAnimationTime);
 	} else if (face->lookingAround) {
 		face->rotationTransitionCounter += dt;
 		if (face->rotationTransitionCounter > 2000000) {
@@ -418,6 +459,18 @@ void updateFace(int dt) {
 			face->transitioningRotation = true;
 		}
 	}
+
+	if (face->shouldBlink || eye1Info.blinking || eye2Info.blinking) {
+		eye1Info.eyelidCounter += dt;
+		eye2Info.eyelidCounter += dt;
+	}
+
+	if (camera.calibrated()) {
+		Circle circle = camera.getFrameCircle();
+		glm::vec3 position = camera.getObjectPosition(circle);
+		lookAtPoint(position);
+	}
+
 	static bool calc = true;
 	static int counter = 0;
 	counter += 1;
@@ -478,7 +531,7 @@ static void Animate(void)
 	//NEW BLOCK
 	glDisable(GL_LIGHTING);
 
-	drawEyeSystem(eyeX, eyeY, eyeZ, eyePitch, eyeYaw, eyeRoll, eye1Info, eye2Info);
+	drawEyeSystem(eyeX, eyeY, eyeZ, eyePitch, eyeYaw, eyeRoll, eye1Info, eye2Info, face->shouldBlink);
 
 //COLOR FACE
 	glEnable(GL_LIGHTING);
@@ -556,6 +609,13 @@ int main(int argc, char** argv)
 	window.create(sf::VideoMode(1024, 1024, 32), "Face", 7U, settings);
 	window.setFramerateLimit(60);
 	window.setPosition(sf::Vector2i(50, 190)); //Temp
+
+//	camera.openStream(2);
+//	camera.calibrateBottomTop(true, -20);
+//	camera.calibrateBottomTop(false,20);
+//	camera.calibrateSides(true, -20);
+//	camera.calibrateSides(false, 20);
+//	camera.calibrateDepth(20);
 
 	// Initialize OpenGL
 	OpenGLInit();
